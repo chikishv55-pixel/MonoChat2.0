@@ -1,17 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const jwt = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 const { dbRun, dbGet } = require('../db/database');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'monochrome-super-secret-key-123';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Проверка наличия секретного ключа
+if (!JWT_SECRET) {
+    console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: JWT_SECRET не установлен!');
+    process.exit(1);
+}
+
 const SALT_ROUNDS = 10;
 
 // Ограничение попыток входа/регистрации
 const loginAttempts = new Map();
 const registerAttempts = new Map();
-const AUTH_ATTEMPTS_LIMIT = 5;
-const AUTH_ATTEMPTS_WINDOW = 5 * 60 * 1000;
+const AUTH_ATTEMPTS_LIMIT = parseInt(process.env.AUTH_ATTEMPTS_LIMIT) || 5;
+const AUTH_ATTEMPTS_WINDOW = parseInt(process.env.AUTH_ATTEMPTS_WINDOW_MS) || 5 * 60 * 1000;
+
+// Очистка старых попыток каждые 10 минут для предотвращения утечки памяти
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of loginAttempts.entries()) {
+        if (now - data.firstAttempt > AUTH_ATTEMPTS_WINDOW) {
+            loginAttempts.delete(ip);
+        }
+    }
+    for (const [ip, data] of registerAttempts.entries()) {
+        if (now - data.firstAttempt > AUTH_ATTEMPTS_WINDOW) {
+            registerAttempts.delete(ip);
+        }
+    }
+}, 10 * 60 * 1000);
 
 router.post('/register', async (req, res) => {
     try {

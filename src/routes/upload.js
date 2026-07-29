@@ -3,9 +3,15 @@ const router = express.Router();
 const fs = require('fs').promises;
 const path = require('path');
 const mime = require('mime-types');
+const jwt = require('jsonwebtoken');
 const { dbRun, dbGet } = require('../db/database');
-const jwt = require('../utils/jwt');
-const { JWT_SECRET } = require('./auth');
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error('❌ JWT_SECRET не установлен в upload route!');
+    process.exit(1);
+}
 
 router.use((req, res, next) => {
     const authHeader = req.headers.authorization;

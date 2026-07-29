@@ -3,14 +3,35 @@ const bcrypt = require('bcrypt');
 const fs = require('fs').promises;
 const path = require('path');
 const mime = require('mime-types');
-const jwt = require('../utils/jwt');
-const { JWT_SECRET } = require('../routes/auth');
+const jwt = require('jsonwebtoken');
 
-const SALT_ROUNDS = 10;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error('❌ JWT_SECRET не установлен в socket handler!');
+    process.exit(1);
+}
+
+// Rate limiting для защиты от брутфорса
 const loginAttempts = new Map();
 const registerAttempts = new Map();
-const AUTH_ATTEMPTS_LIMIT = 5;
-const AUTH_ATTEMPTS_WINDOW = 5 * 60 * 1000;
+const AUTH_ATTEMPTS_LIMIT = parseInt(process.env.AUTH_ATTEMPTS_LIMIT) || 5;
+const AUTH_ATTEMPTS_WINDOW = parseInt(process.env.AUTH_ATTEMPTS_WINDOW_MS) || 5 * 60 * 1000;
+
+// Очистка старых попыток входа каждые 10 минут
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of loginAttempts.entries()) {
+        if (now - data.firstAttempt > AUTH_ATTEMPTS_WINDOW) {
+            loginAttempts.delete(ip);
+        }
+    }
+    for (const [ip, data] of registerAttempts.entries()) {
+        if (now - data.firstAttempt > AUTH_ATTEMPTS_WINDOW) {
+            registerAttempts.delete(ip);
+        }
+    }
+}, 10 * 60 * 1000);
 
 module.exports = function(io, onlineUsers) {
     const joinUserRooms = async (socket, username) => {
