@@ -6,8 +6,8 @@
     <title>Монохром</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="nightfall.css">
-    <meta name="theme-color" content="#0b0d0d">
+    <link rel="stylesheet" href="interface.css">
+    <meta name="theme-color" content="#050505">
 </head>
 <body>
     <div id="splash-screen">
@@ -16,37 +16,43 @@
     <input type="file" id="avatar-upload" accept="image/*,video/*" style="display:none" onchange="uploadAvatar(this)">
 
     <div id="auth-screen" class="screen active">
+        <div class="auth-brand"><span class="mini-logo"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span> monochrome<span class="brand-dot">.</span></div>
+        <div class="auth-orbit" aria-hidden="true">
+            <span class="float-icon float-chat"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+            <span class="float-icon float-voice"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 13v6m5-11v16m5-20v24m5-18v12m5-9v6"/></svg></span>
+            <span class="float-icon float-send"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m4 14 24-9-8 23-5-9-11-5Z"/><path d="m15 19 13-14"/></svg></span>
+            <span class="float-icon float-smile"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="16" cy="16" r="12"/><path d="M11 19c3 4 7 4 10 0M12 12v1m8-1v1"/></svg></span>
+        </div>
         <div class="auth-container">
-            <div class="card" id="login-card">
-                <div class="brand-symbol" aria-hidden="true">m<span>°</span></div><div class="eyebrow">MONOCHROME</div><h1>Ближе. Даже издалека.</h1><p class="auth-caption">Твоё пространство для разговоров.</p>
-                <div class="input-group"><input type="text" class="input-field" id="username-input" placeholder="юзернейм (например: ivan)"></div>
-                <div class="input-group"><input type="password" class="input-field" id="password-input" placeholder="пароль"></div>
-                <button class="action-btn" onclick="login()">Войти <span aria-hidden="true">→</span></button>
-                <div class="card-footer">
-                    <button class="footer-btn" onclick="showRegister()">Создать аккаунт</button>
-                    <button class="help-btn" onclick="showHelp()">?</button>
+            <form class="card" id="login-card" onsubmit="event.preventDefault(); login()">
+                <div class="auth-emblem"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <h1>С возвращением.</h1><p class="auth-caption">Твои люди. Твои разговоры.</p>
+                <div class="auth-switch"><span class="selected">Вход</span><button type="button" onclick="showRegister()">Регистрация</button></div>
+                <div class="input-group"><label for="username-input">Юзернейм</label><div class="field-wrap"><input class="input-field" id="username-input" type="text" placeholder="Например, alex" autocomplete="username" required ></div></div>
+                <div class="input-group"><label for="password-input">Пароль</label><div class="field-wrap"><input class="input-field" id="password-input" type="password" placeholder="Введи пароль" autocomplete="current-password" required ><button class="password-toggle" type="button" aria-label="Показать пароль" aria-pressed="false" onclick="const i=document.getElementById('password-input'); const show=i.type==='password'; i.type=show?'text':'password'; this.setAttribute('aria-pressed',show); this.setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+                <button class="action-btn" type="submit">Войти <span aria-hidden="true">→</span></button>
+                <div class="card-footer"><span>Впервые здесь?</span><button type="button" class="footer-btn" onclick="showRegister()">Создать аккаунт</button></div>
+            </form>
+            <form class="card hidden" id="register-card" onsubmit="event.preventDefault(); register()">
+                <div class="auth-emblem"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+                <h1>Будем на связи.</h1><p class="auth-caption">Создай аккаунт. Остальное — в переписке.</p>
+                <div class="auth-switch"><button type="button" onclick="showLogin()">Вход</button><span class="selected">Регистрация</span></div>
+                <div class="input-group"><label for="reg-displayname">Как тебя зовут?</label><div class="field-wrap"><input class="input-field" id="reg-displayname" type="text" placeholder="Твоё имя" autocomplete="nickname" required ></div></div>
+                <div class="input-group"><label for="reg-username">Юзернейм</label><div class="field-wrap"><input class="input-field" id="reg-username" type="text" placeholder="Например, alex" autocomplete="username" required pattern="[a-zA-Z0-9_]{3,20}" title="От 3 до 20 латинских букв, цифр или знаков подчёркивания"></div></div>
+                <div class="password-grid">
+                <div class="input-group"><label for="reg-password">Пароль</label><div class="field-wrap"><input class="input-field" id="reg-password" type="password" placeholder="От 6 символов" autocomplete="new-password" required minlength="6"><button class="password-toggle" type="button" aria-label="Показать пароль" aria-pressed="false" onclick="const i=document.getElementById('reg-password'); const show=i.type==='password'; i.type=show?'text':'password'; this.setAttribute('aria-pressed',show); this.setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+                <div class="input-group"><label for="reg-password2">Ещё раз</label><div class="field-wrap"><input class="input-field" id="reg-password2" type="password" placeholder="Повтори пароль" autocomplete="new-password" required minlength="6"><button class="password-toggle" type="button" aria-label="Показать пароль" aria-pressed="false" onclick="const i=document.getElementById('reg-password2'); const show=i.type==='password'; i.type=show?'text':'password'; this.setAttribute('aria-pressed',show); this.setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
                 </div>
-            </div>
-
-            <div class="card hidden" id="register-card">
-                <div class="eyebrow">MONOCHROME</div><h1>Начнём знакомство.</h1><p class="auth-caption">Создай профиль и найди своих.</p>
-                <div class="input-group"><input type="text" class="input-field" id="reg-displayname" placeholder="Ваше Имя (видят все)"></div>
-                <div class="input-group"><input type="text" class="input-field" id="reg-username" placeholder="Уникальный юзернейм (без @)"></div>
-                <div class="input-group"><input type="password" class="input-field" id="reg-password" placeholder="пароль"></div>
-                <div class="input-group"><input type="password" class="input-field" id="reg-password2" placeholder="повторите пароль"></div>
-                <button class="action-btn" onclick="register()">регистрация</button>
-                <div class="card-footer">
-                    <button class="footer-btn" onclick="showLogin()">Уже есть аккаунт</button>
-                    <button class="help-btn" onclick="showHelp()">?</button>
-                </div>
-            </div>
+                <button class="action-btn" type="submit">Создать аккаунт <span aria-hidden="true">→</span></button>
+                <div class="card-footer"><span>Уже с нами?</span><button type="button" class="footer-btn" onclick="showLogin()">Войти в аккаунт</button></div>
+            </form>
         </div>
     </div>
 
     <div id="chat-screen" class="screen">
         <div class="chat-container">
             <div class="chats-column">
-                <div class="sidebar-brand"><span class="wordmark">mono<span>chrome</span><i>°</i></span><span class="edition-label">ТВОЁ ПРОСТРАНСТВО</span></div>
+                <div class="sidebar-brand"><span class="wordmark"><span class="mini-logo"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span> monochrome<span class="brand-dot">.</span></span></div>
                 <div class="profile-section">
                     <div class="profile-row">
                         <div class="avatar-wrapper" style="cursor: pointer;" onclick="openMyProfileModal()">
@@ -83,7 +89,7 @@
                     </div>
                 </div>
                 <input type="file" id="story-upload" accept="image/*" style="display:none" onchange="postStory(this)">
-                <div class="list-heading"><h2>Сообщения</h2><span>ЛИЧНОЕ</span></div>
+                <div class="list-heading"><h2>Чаты</h2><span>Все сообщения</span></div>
                 <div class="chats-list" id="chats-list"></div>
                 <button class="fab" aria-label="Новый чат" title="Новый чат" onclick="openNewChatChoiceModal()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -113,7 +119,7 @@
                     </div>
                 </div>
                 
-                <div class="messages-area" id="messages-area"><div class="conversation-welcome"><div class="brand-symbol" aria-hidden="true">m<span>°</span></div><div class="eyebrow">МЕНЬШЕ ШУМА. БОЛЬШЕ БЛИЗОСТИ.</div><h2>Хороший разговор<br>начинается с «привет».</h2><p>Выбери чат или найди человека по юзернейму.</p></div></div>
+                <div class="messages-area" id="messages-area"><div class="conversation-welcome"><div class="welcome-icon"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 6h18a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-9l-7 5v-5H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3Z" stroke="currentColor" stroke-width="1.8"/><path d="M10 12h12M10 17h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div><h2>Начни с «привет».</h2><p>Выбери чат или найди человека по юзернейму.</p><button class="welcome-create" onclick="openNewChatChoiceModal()">Новый разговор <span aria-hidden="true">+</span></button></div></div>
                 
                 <div id="reply-preview-area"></div>
 
