@@ -569,7 +569,7 @@ function loadRecentChats() {
             area.innerHTML = '';
             
             if (messages.length === 0) {
-                area.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted); opacity: 0.5;">История сообщений пуста</div>';
+                area.innerHTML = '<div class="history-empty">Здесь начинается ваш разговор.</div>';
                 return;
             }
 
