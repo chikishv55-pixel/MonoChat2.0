@@ -3,6 +3,7 @@ function showLogin() { document.getElementById('login-card').classList.remove('h
         function showHelp() { alert("МОНОХРОМ - приватный чат."); }
 
         function closeAllModals() {
+            document.getElementById('call-choice-modal').classList.remove('active');
             document.getElementById('main-overlay').classList.remove('active');
             document.getElementById('profile-modal').classList.remove('active');
             document.getElementById('delete-modal').classList.remove('active');

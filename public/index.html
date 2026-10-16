@@ -407,7 +407,7 @@
         <div class="modal-content" id="forward-chats-list">
             <!-- Chat list will be rendered here -->
         </div>
-        <button class="modal-btn" onclick="executeForward()">Переслать</button>
+        <button class="modal-btn primary" id="forward-submit" onclick="executeForward()" disabled>Переслать</button>
         <button class="modal-btn transparent" onclick="closeAllModals()">Отмена</button>
     </div>
 
@@ -477,9 +477,9 @@
 
     <!-- Модалка выбора типа звонка -->
     <div id="call-choice-modal" class="custom-modal">
-        <h3>Выберите тип звонка</h3>
-        <button class="modal-btn" onclick="startCall(false); closeCallChoice();">Аудиозвонок</button>
-        <button class="modal-btn" onclick="startCall(true); closeCallChoice();">Видеозвонок</button>
+        <h3>Как позвоним?</h3>
+        <button class="modal-btn call-option" onclick="startCall(false); closeCallChoice();"><span class="option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m7 3 3 5-3 3c2 3 3 4 6 6l3-3 5 3c0 3-2 5-5 4C9 19 5 15 3 8 2 5 4 3 7 3Z"/></svg></span><span>Аудиозвонок<small>Только голос</small></span><span class="option-arrow" aria-hidden="true">↗</span></button>
+        <button class="modal-btn call-option" onclick="startCall(true); closeCallChoice();"><span class="option-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="12" height="14" rx="4"/><path d="m15 10 6-4v12l-6-4"/></svg></span><span>Видеозвонок<small>Лицом к лицу</small></span><span class="option-arrow" aria-hidden="true">↗</span></button>
         <button class="modal-btn transparent" onclick="closeCallChoice()">Отмена</button>
     </div>
 

@@ -229,12 +229,29 @@ module.exports = function(io, onlineUsers) {
             } catch (err) { console.error(err); }
         });
 
-        socket.on('forward_message', async (data) => {
+        socket.on('forward_message', async (data, callback) => {
+            const respond = typeof callback === 'function' ? callback : () => {};
+            try {
             const me = socket.user; if (!me) return;
+            if (!Array.isArray(data?.targets) || !data.targets.length || data.targets.length > 100 || data.targets.some(t => typeof t !== 'string')) {
+                return respond({ success: false, message: 'Выберите чаты для пересылки.' });
+            }
             const orig = await dbGet(`SELECT * FROM messages WHERE id = ?`, [data.messageId]);
-            if (!orig) return;
+            if (!orig) return respond({ success: false, message: 'Сообщение не найдено.' });
+            const sourceIsGroup = /^g\d+$/.test(orig.receiver);
+            const canRead = sourceIsGroup
+                ? await dbGet('SELECT 1 FROM group_members WHERE group_id = ? AND user_username = ?', [orig.receiver.substring(1), me.username])
+                : orig.sender === me.username || orig.receiver === me.username;
+            if (!canRead) return respond({ success: false, message: 'Нет доступа к сообщению.' });
+            const targets = [...new Set(data.targets)];
+            for (const target of targets) {
+                const allowed = /^g\d+$/.test(target)
+                    ? await dbGet('SELECT 1 FROM group_members WHERE group_id = ? AND user_username = ?', [target.substring(1), me.username])
+                    : await dbGet('SELECT 1 FROM users WHERE username = ?', [target]);
+                if (!allowed) return respond({ success: false, message: 'Один из чатов недоступен.' });
+            }
             const time = `${new Date().getHours()}:${new Date().getMinutes().toString().padStart(2,'0')}`;
-            for (const target of data.targets) {
+            for (const target of targets) {
                 const { lastID } = await dbRun("INSERT INTO messages (sender, receiver, text, type, time, duration, forwarded_from_username) VALUES (?, ?, ?, ?, ?, ?, ?)", [me.username, target, orig.text, orig.type, time, orig.duration || 0, orig.sender]);
                 const msg = { id: lastID, sender: me.username, receiver: target, text: orig.text, type: orig.type, time, duration: orig.duration || 0, forwarded_from_username: orig.sender };
                 if (target.startsWith('g')) io.to(target).emit('private message', msg);
@@ -242,6 +259,11 @@ module.exports = function(io, onlineUsers) {
                     const r = onlineUsers.get(target); if (r) io.to(Array.from(r)).emit('private message', msg);
                     const s = onlineUsers.get(me.username); if (s) io.to(Array.from(s)).emit('private message', msg);
                 }
+            }
+            respond({ success: true });
+            } catch (error) {
+                console.error('Forward message error:', error.message);
+                respond({ success: false, message: 'Не удалось завершить пересылку. Проверьте чаты перед повторной отправкой.' });
             }
         });
 

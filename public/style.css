@@ -214,8 +214,7 @@ body.dark-theme .message.mine .wave-bar { background: rgba(255,255,255,0.3); }
 body.dark-theme .message.mine .play-btn svg { fill: #fff; }
 .hidden-audio { display: none; }
 
-.image-bubble { padding: 4px; background: var(--bg-card) !important; border-radius: 12px; width: 260px; height: auto; border: none !important;}
-.message.mine .image-bubble { background: var(--bubble-mine-bg) !important; }
+.image-bubble { width: 260px; height: auto; }
 .image-bubble .message-img { border-radius: 8px; width: 100%; height: auto; max-height: 260px; object-fit: cover; display: block; cursor: pointer; }
 .gallery-bubble { padding: 4px; border-radius: 12px; }
 .gallery-grid { display: grid; gap: 4px; grid-template-columns: repeat(2, 1fr); }

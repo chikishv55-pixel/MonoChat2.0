@@ -222,12 +222,23 @@ function postStory(input) {
             socket.emit('get recent chats', (chats) => {
                 const list = document.getElementById('forward-chats-list');
                 list.innerHTML = '';
+                const submit = document.getElementById('forward-submit');
+                submit.disabled = true;
+                submit.textContent = 'Переслать';
+                if (!chats.length) {
+                    list.innerHTML = '<p class="modal-empty">Пока нет чатов для пересылки.</p>';
+                }
                 chats.forEach(chat => {
                     const displayName = myContacts[chat.username] || chat.display_name;
                     const avatarHTML = renderAvatarHTML(chat.avatar, displayName, 'chat-avatar');
                     const item = document.createElement('div');
                     item.className = 'chat-item';
-                    item.innerHTML = `<label><input type="checkbox" name="forward-target" value="${chat.username}"><div class="avatar-wrapper">${avatarHTML}</div><div class="chat-info"><span class="chat-name">${displayName}</span>${chat.is_premium ? '<span class="premium-star">★</span>' : ''}</div></label>`;
+                    item.innerHTML = `<label class="forward-recipient"><div class="avatar-wrapper">${avatarHTML}</div><div class="chat-info"><span class="chat-name">${escapeHTML(displayName)}</span><span class="chat-last-message">${chat.isGroup ? 'Группа / канал' : '@' + escapeHTML(chat.username)}</span></div><input type="checkbox" name="forward-target" value="${escapeHTML(chat.username)}" aria-label="${escapeHTML(displayName)}"></label>`;
+                    item.querySelector('input').addEventListener('change', () => {
+                        const count = list.querySelectorAll('input:checked').length;
+                        submit.disabled = count === 0;
+                        submit.textContent = count ? `Переслать · ${count}` : 'Переслать';
+                    });
                     list.appendChild(item);
                 });
                 document.getElementById('main-overlay').classList.add('active');
@@ -240,9 +251,14 @@ function postStory(input) {
             if (selected.length === 0) return alert('Выберите хотя бы один чат для пересылки.');
             
             const targets = Array.from(selected).map(el => el.value);
-            socket.emit('forward_message', { messageId: forwardMessageId, targets }, (res) => {
-                if (res.success) { alert('Сообщение переслано.'); } else { alert('Ошибка: ' + (res.message || 'Не удалось переслать сообщение.')); }
-                closeAllModals();
+            const submit = document.getElementById('forward-submit');
+            submit.disabled = true;
+            submit.textContent = 'Отправляем…';
+            socket.timeout(10000).emit('forward_message', { messageId: forwardMessageId, targets }, (error, res) => {
+                submit.disabled = false;
+                submit.textContent = `Переслать · ${targets.length}`;
+                if (!error && res?.success) closeAllModals();
+                else alert(error ? 'Не получено подтверждение. Проверьте чат перед повторной отправкой.' : (res?.message || 'Не удалось переслать сообщение.'));
             });
         }
 

@@ -448,25 +448,33 @@ function openNewChatChoiceModal() {
         }
 
         function setAvatarUI(imgId, textId, data, name) {
-            const container = document.getElementById(imgId).parentElement;
-            if (container) {
-                container.innerHTML = `<img id="${imgId}" src="" style="display:none" class="avatar-img-actual">
-                                      <div id="${textId}" style="display:none" class="avatar-text-actual"></div>`;
-                const img = document.getElementById(imgId); 
-                const txt = document.getElementById(textId);
-                const finalData = data && data.startsWith('/uploads/') ? `${getFullUrl(data)}?t=${new Date().getTime()}` : data;
-                
-                if (finalData) {
-                    if (isVideoPath(data)) {
-                        container.innerHTML = `<video id="${imgId}" src="${finalData}" autoplay loop muted playsinline class="avatar-img-actual" style="display:flex; object-fit:cover; width:100%; height:100%"></video>
-                                              <div id="${textId}" style="display:none" class="avatar-text-actual"></div>`;
-                    } else {
-                        img.src = finalData; img.style.display = 'flex'; txt.style.display = 'none';
-                    }
-                } else {
-                    img.style.display = 'none'; txt.style.display = 'flex'; txt.textContent = name ? name.substring(0,2).toUpperCase() : '??';
-                }
+            let media = document.getElementById(imgId);
+            const text = document.getElementById(textId);
+            if (!media || !text) return;
+            const className = imgId === 'profile-avatar-img' ? 'avatar' : 'tg-profile-avatar';
+            const video = !!data && (data.startsWith('data:video/') || isVideoPath(data));
+            const tag = video ? 'VIDEO' : 'IMG';
+            if (media.tagName !== tag) {
+                const replacement = document.createElement(tag.toLowerCase());
+                replacement.id = imgId;
+                media.replaceWith(replacement);
+                media = replacement;
             }
+            media.className = text.className = className;
+            text.textContent = name ? name.substring(0, 2).toUpperCase() : '??';
+            media.onerror = () => { media.style.display = 'none'; text.style.display = 'flex'; };
+            if (video) {
+                media.autoplay = true;
+                media.loop = true;
+                media.muted = true;
+                media.playsInline = true;
+            } else {
+                media.alt = name || 'Аватар';
+            }
+            if (data) media.src = getFullUrl(data);
+            else media.removeAttribute('src');
+            media.style.display = data ? 'block' : 'none';
+            text.style.display = data ? 'none' : 'flex';
         }
 
         function logout() { localStorage.removeItem('monochrome_user'); localStorage.removeItem('monochrome_token'); window.location.reload(); }
