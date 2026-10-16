@@ -2,6 +2,44 @@ let localStream;
         let remoteStream;
         let callPeerUsername = null;
         let isCurrentCallVideo = true;
+        let callTimer = null;
+        let callStartedAt = null;
+        let callGeneration = 0;
+        let callReturnFocus = null;
+
+        function updateCallControl(id, off, label) {
+            const button = document.getElementById(id);
+            button.classList.toggle('is-off', off);
+            button.setAttribute('aria-pressed', String(off));
+            button.setAttribute('aria-label', `${off ? 'Включить' : 'Выключить'} ${label}`);
+        }
+
+        function prepareCallScreen(name, avatar, video, status) {
+            document.getElementById('active-call-name').textContent = name || 'Собеседник';
+            setAvatarUI('active-avatar-img', 'active-avatar-text', avatar, name);
+            document.getElementById('active-call-kind').textContent = video ? 'Видеозвонок' : 'Аудиозвонок';
+            document.getElementById('active-call-status').textContent = status;
+            document.getElementById('video-call-overlay').classList.remove('has-remote-video');
+            document.getElementById('toggle-video-btn').hidden = !video;
+            document.getElementById('local-preview').hidden = !video;
+            document.getElementById('local-preview').classList.remove('camera-off');
+            document.getElementById('remote-video').muted = false;
+            updateCallControl('toggle-video-btn', false, 'камеру');
+            updateCallControl('toggle-audio-btn', false, 'микрофон');
+            updateCallControl('toggle-speaker-btn', false, 'звук собеседника');
+            document.getElementById('call-timer').hidden = true;
+        }
+
+        function showActiveCall() {
+            document.getElementById('local-video').srcObject = isCurrentCallVideo ? localStream : null;
+            document.getElementById('video-call-overlay').style.display = 'flex';
+            document.getElementById('end-call-btn').focus();
+        }
+
+        function updateCallTimer() {
+            const seconds = Math.floor((Date.now() - callStartedAt) / 1000);
+            document.getElementById('call-timer').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        }
 
         // =====================================================================
         // RINGTONE via Web Audio API
@@ -120,31 +158,20 @@ let localStream;
         const rtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
 
         async function startCall(videoEnabled) {
-            if (!currentChatUser || currentChatUser.isGroup) return;
+            if (!currentChatUser || currentChatUser.isGroup || callPeerUsername) return;
+            callReturnFocus = document.activeElement;
+            const generation = ++callGeneration;
             callPeerUsername = currentChatUser.username;
             isCurrentCallVideo = videoEnabled;
-            
-            // Предварительная настройка UI звонка
-            isSpeakerOn = videoEnabled; // Видео -> Спикер, Аудио -> Ушной динамик
-            const speakerBtn = document.getElementById('toggle-speaker-btn');
-            if (speakerBtn) speakerBtn.style.background = isSpeakerOn ? 'rgba(255,255,255,0.2)' : 'rgba(231,76,60,0.8)';
-
-            document.getElementById('toggle-video-btn').style.display = videoEnabled ? 'flex' : 'none';
-            document.getElementById('toggle-video-btn').style.background = 'rgba(255,255,255,0.2)';
-            document.getElementById('toggle-audio-btn').style.background = 'rgba(255,255,255,0.2)';
+            prepareCallScreen(currentChatUser.display_name, currentChatUser.avatar, videoEnabled, 'Вызываем…');
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: videoEnabled, audio: true });
-                if (videoEnabled) {
-                    document.getElementById('local-video').style.display = 'block';
-                    document.getElementById('local-video').srcObject = localStream;
-                } else {
-                    document.getElementById('local-video').srcObject = null;
-                }
-                
-                document.getElementById('video-call-overlay').style.display = 'flex';
+                const stream = await navigator.mediaDevices.getUserMedia({ video: videoEnabled, audio: true });
+                if (generation !== callGeneration) { stream.getTracks().forEach(t => t.stop()); return; }
+                localStream = stream;
+                showActiveCall();
                 socket.emit('start_call', { to: callPeerUsername, isVideo: videoEnabled });
-            } catch (err) { alert('Не удалось получить доступ к камере или микрофону. Проверьте разрешения.'); callPeerUsername = null; }
+            } catch (err) { cleanupCall(); alert('Не удалось получить доступ к камере или микрофону. Проверьте разрешения.'); }
         }
 
         socket.on('incoming_call', (data) => {
@@ -153,6 +180,8 @@ let localStream;
                 return;
             }
             closeAllModals();
+            callReturnFocus = document.activeElement;
+            ++callGeneration;
             callPeerUsername = data.from;
             isCurrentCallVideo = data.isVideo;
 
@@ -160,6 +189,8 @@ let localStream;
             document.getElementById('ic-caller-name').textContent = data.callerName;
             document.getElementById('ic-call-type').textContent = data.isVideo ? 'Входящий видеозвонок' : 'Входящий аудиозвонок';
             document.getElementById('incoming-call-overlay').classList.add('active');
+            prepareCallScreen(data.callerName, data.callerAvatar, data.isVideo, 'Соединяем…');
+            document.querySelector('#incoming-call-overlay .accept').focus();
 
             // Запускаем рингтон через Web Audio API
             startRingtone(data.callerName);
@@ -167,27 +198,16 @@ let localStream;
 
 
         async function acceptCall() {
+            if (!callPeerUsername || !document.getElementById('incoming-call-overlay').classList.contains('active')) return;
+            const generation = callGeneration;
             stopRingtone();
             document.getElementById('incoming-call-overlay').classList.remove('active');
-            
-            // Настройка UI перед показом
-            isSpeakerOn = isCurrentCallVideo; // Видео -> Спикер, Аудио -> Ушной динамик
-            const speakerBtn = document.getElementById('toggle-speaker-btn');
-            if (speakerBtn) speakerBtn.style.background = isSpeakerOn ? 'rgba(255,255,255,0.2)' : 'rgba(231,76,60,0.8)';
-
-            document.getElementById('toggle-video-btn').style.display = isCurrentCallVideo ? 'flex' : 'none';
-            document.getElementById('toggle-video-btn').style.background = 'rgba(255,255,255,0.2)';
-            document.getElementById('toggle-audio-btn').style.background = 'rgba(255,255,255,0.2)';
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isCurrentCallVideo, audio: true });
-                if (isCurrentCallVideo) {
-                    document.getElementById('local-video').style.display = 'block';
-                    document.getElementById('local-video').srcObject = localStream;
-                } else {
-                    document.getElementById('local-video').srcObject = null;
-                }
-                document.getElementById('video-call-overlay').style.display = 'flex';
+                const stream = await navigator.mediaDevices.getUserMedia({ video: isCurrentCallVideo, audio: true });
+                if (generation !== callGeneration) { stream.getTracks().forEach(t => t.stop()); return; }
+                localStream = stream;
+                showActiveCall();
                 
                 socket.emit('accept_call', { to: callPeerUsername, isVideo: isCurrentCallVideo });
                 setupPeerConnection();
@@ -201,10 +221,12 @@ let localStream;
             stopRingtone();
             document.getElementById('incoming-call-overlay').classList.remove('active');
             if (callPeerUsername) socket.emit('reject_call', { to: callPeerUsername });
-            callPeerUsername = null;
+            cleanupCall();
         }
 
         socket.on('call_accepted', async () => {
+            if (!callPeerUsername || !localStream) return;
+            document.getElementById('active-call-status').textContent = 'Соединяем…';
             setupPeerConnection();
             try {
                 const offer = await peerConnection.createOffer();
@@ -235,13 +257,41 @@ let localStream;
 
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-            peerConnection.ontrack = (event) => { event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track)); };
+            peerConnection.ontrack = (event) => {
+                remoteStream.addTrack(event.track);
+                if (event.track.kind === 'video') {
+                    const showVideo = () => document.getElementById('video-call-overlay').classList.add('has-remote-video');
+                    if (!event.track.muted) showVideo();
+                    event.track.onunmute = showVideo;
+                    event.track.onended = () => document.getElementById('video-call-overlay').classList.remove('has-remote-video');
+                }
+                document.getElementById('remote-video').play().catch(() => {});
+            };
+            peerConnection.onconnectionstatechange = () => {
+                if (!peerConnection) return;
+                const state = peerConnection.connectionState;
+                if (state === 'connected') {
+                    document.getElementById('active-call-status').textContent = 'На связи';
+                    if (!callStartedAt) {
+                        callStartedAt = Date.now();
+                        updateCallTimer();
+                        callTimer = setInterval(updateCallTimer, 1000);
+                    }
+                    document.getElementById('call-timer').hidden = false;
+                } else if (state === 'disconnected') {
+                    document.getElementById('active-call-status').textContent = 'Восстанавливаем связь…';
+                } else if (state === 'failed') {
+                    endCall();
+                    alert('Не удалось установить связь. Попробуйте позвонить ещё раз.');
+                }
+            };
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) socket.emit('webrtc_ice_candidate', { to: callPeerUsername, candidate: event.candidate });
             };
         }
 
         socket.on('webrtc_offer', async (data) => {
+            if (!callPeerUsername || !localStream) return;
             if (!peerConnection) setupPeerConnection();
             try {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
@@ -267,51 +317,46 @@ let localStream;
         }
 
         function cleanupCall() {
+            ++callGeneration;
+            stopRingtone();
+            clearInterval(callTimer);
+            callTimer = null;
+            callStartedAt = null;
             if (peerConnection) { peerConnection.close(); peerConnection = null; }
             if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
+            remoteStream = null;
             callPeerUsername = null;
             document.getElementById('local-video').srcObject = null;
             document.getElementById('remote-video').srcObject = null;
             document.getElementById('video-call-overlay').style.display = 'none';
+            document.getElementById('video-call-overlay').classList.remove('has-remote-video');
+            document.getElementById('incoming-call-overlay').classList.remove('active');
+            document.getElementById('call-timer').hidden = true;
+            document.getElementById('local-preview').hidden = true;
+            if (callReturnFocus?.isConnected) callReturnFocus.focus();
+            callReturnFocus = null;
         }
 
         function toggleVideo() {
             if (!localStream) return;
             const vt = localStream.getVideoTracks()[0];
-            if (vt) { vt.enabled = !vt.enabled; document.getElementById('toggle-video-btn').style.background = vt.enabled ? 'rgba(255,255,255,0.2)' : 'rgba(231,76,60,0.8)'; }
+            if (vt) {
+                vt.enabled = !vt.enabled;
+                updateCallControl('toggle-video-btn', !vt.enabled, 'камеру');
+                document.getElementById('local-preview').classList.toggle('camera-off', !vt.enabled);
+            }
         }
 
         function toggleAudio() {
             if (!localStream) return;
             const at = localStream.getAudioTracks()[0];
-            if (at) { at.enabled = !at.enabled; document.getElementById('toggle-audio-btn').style.background = at.enabled ? 'rgba(255,255,255,0.2)' : 'rgba(231,76,60,0.8)'; }
+            if (at) { at.enabled = !at.enabled; updateCallControl('toggle-audio-btn', !at.enabled, 'микрофон'); }
         }
 
-        let isSpeakerOn = true;
-        async function toggleSpeaker() {
+        function toggleSpeaker() {
             const remoteVideo = document.getElementById('remote-video');
-            if (!remoteVideo || !remoteVideo.setSinkId) {
-                console.warn('setSinkId not supported');
-                return;
-            }
-
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
-                
-                // Это упрощенная логика, так как точные ID динамика/ушного динамика варьируются
-                // В браузере обычно 'default' - это текущий системный выход.
-                // На мобильных устройствах переключение часто контролирует сама ОС на основе наличия видео.
-                
-                isSpeakerOn = !isSpeakerOn;
-                const btn = document.getElementById('toggle-speaker-btn');
-                if (btn) btn.style.background = isSpeakerOn ? 'rgba(255,255,255,0.2)' : 'rgba(231,76,60,0.8)';
-                
-                // Прямое управление через setSinkId (работает не везде, но лучший вариант для JS)
-                // Если не работает, ОС обычно сама переключает на ушной динамик, если видео выключено.
-            } catch (err) {
-                console.error('Error toggling speaker:', err);
-            }
+            remoteVideo.muted = !remoteVideo.muted;
+            updateCallControl('toggle-speaker-btn', remoteVideo.muted, 'звук собеседника');
         }
 
         // ==========================================

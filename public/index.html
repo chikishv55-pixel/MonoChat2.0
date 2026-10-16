@@ -417,13 +417,16 @@
     </div>
 
 
-    <!-- Экран входящего звонка (Telegram-style) -->
-    <div id="incoming-call-overlay" class="call-overlay">
+    <!-- Incoming call -->
+    <div id="incoming-call-overlay" class="call-overlay" role="dialog" aria-modal="true" aria-labelledby="ic-caller-name">
         <div class="call-background"></div>
+        <div class="call-brand">monochrome<span>.</span><span class="call-badge">Входящий вызов</span></div>
         <div class="call-content">
             <div class="caller-info">
-                <div class="profile-modal-avatar" id="ic-avatar-text">--</div>
-                <img class="profile-modal-avatar" id="ic-avatar-img" src="" style="display:none;">
+                <div class="call-avatar-wrap ringing">
+                    <div class="tg-profile-avatar" id="ic-avatar-text">--</div>
+                    <img class="tg-profile-avatar" id="ic-avatar-img" src="" style="display:none;">
+                </div>
                 <h2 id="ic-caller-name">Имя</h2>
                 <p id="ic-call-type">Входящий звонок...</p>
             </div>
@@ -442,15 +445,25 @@
     <!-- Рингтон теперь через Web Audio API в webrtc.js -->
     <audio id="ringtone" style="display:none"></audio>
 
-    <!-- Экран активного видеозвонка -->
-    <div id="video-call-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 7000; display: none; flex-direction: column;">
-        <video id="remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-        <video id="local-video" autoplay playsinline muted style="position: absolute; top: 40px; right: 20px; width: 100px; height: 140px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(255,255,255,0.5); box-shadow: 0 4px 12px rgba(0,0,0,0.5); background: #222;"></video>
-        <div style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px;">
-            <button onclick="toggleVideo()" id="toggle-video-btn" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px);">📹</button>
-            <button onclick="toggleSpeaker()" id="toggle-speaker-btn" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px);">🔊</button>
-            <button onclick="toggleAudio()" id="toggle-audio-btn" style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); color: white; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px);">🎤</button>
-            <button onclick="endCall()" style="width: 56px; height: 56px; border-radius: 50%; background: #e74c3c; border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(231,76,60,0.5);">📞</button>
+    <!-- Shared audio/video call stage -->
+    <div id="video-call-overlay" role="dialog" aria-modal="true" aria-labelledby="active-call-name">
+        <video id="remote-video" autoplay playsinline></video>
+        <div class="call-brand">monochrome<span>.</span><span class="call-badge" id="active-call-kind">Аудиозвонок</span></div>
+        <div class="active-caller-info">
+            <div class="call-avatar-wrap"><div class="tg-profile-avatar" id="active-avatar-text">--</div><img class="tg-profile-avatar" id="active-avatar-img" alt="" style="display:none;"></div>
+            <h2 id="active-call-name">Собеседник</h2>
+            <p id="active-call-status" role="status">Вызываем…</p>
+            <span id="call-timer" hidden>00:00</span>
+        </div>
+        <div class="local-preview" id="local-preview" hidden>
+            <video id="local-video" autoplay playsinline muted></video>
+            <span class="local-camera-off">Камера выключена</span><span class="local-preview-label">Вы</span>
+        </div>
+        <div class="call-toolbar" aria-label="Управление звонком">
+            <button onclick="toggleVideo()" id="toggle-video-btn" class="call-tool" aria-label="Выключить камеру" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 6-4v12l-6-4"/></svg><span>Камера</span></button>
+            <button onclick="toggleSpeaker()" id="toggle-speaker-btn" class="call-tool" aria-label="Выключить звук собеседника" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4V5Zm4 3a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></svg><span>Звук</span></button>
+            <button onclick="toggleAudio()" id="toggle-audio-btn" class="call-tool" aria-label="Выключить микрофон" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></svg><span>Микрофон</span></button>
+            <button onclick="endCall()" id="end-call-btn" class="call-tool hangup" aria-label="Завершить звонок"><svg viewBox="0 0 24 24"><path d="M3 16v-4c5-5 13-5 18 0v4h-5v-4a12 12 0 0 0-8 0v4H3Z"/></svg><span>Завершить</span></button>
         </div>
     </div>
 
