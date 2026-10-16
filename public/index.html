@@ -222,6 +222,7 @@
                     </div>
                     <div class="tg-profile-name" id="my-profile-name-modal">Имя</div>
                     <div class="tg-profile-status">В сети</div>
+                    <button class="cover-edit-button" onclick="openCoverEditor()">Настроить фон</button>
                 </div>
                 
                 <div class="tg-section">
@@ -304,6 +305,27 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="cover-editor" class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="cover-title">
+        <h3 id="cover-title">Фон профиля</h3>
+        <div id="cover-preview" class="tg-profile-cover">
+            <div id="cover-preview-avatar" class="tg-avatar-wrapper"></div>
+            <div id="cover-preview-name" class="tg-profile-name"></div>
+            <div class="tg-profile-status">Так увидят другие</div>
+        </div>
+        <fieldset id="cover-controls" disabled>
+            <div class="cover-photo-actions">
+                <label class="modal-btn cover-upload-label">Выбрать фото<input id="cover-file" type="file" accept="image/jpeg,image/png,image/webp" onchange="chooseCoverPhoto(this)"></label>
+                <button class="modal-btn transparent" id="cover-remove" onclick="removeCoverPhoto()">Убрать фото</button>
+            </div>
+            <label class="cover-control" for="cover-blur"><span>Размытие</span><output id="cover-blur-value">0</output></label>
+            <input id="cover-blur" type="range" min="0" max="20" step="1" value="0" oninput="updateCoverPreview()">
+            <label class="cover-control cover-snow-control" for="cover-snow"><span>Падающий снег<small>Лёгкая анимация поверх фона</small></span><input id="cover-snow" type="checkbox" onchange="updateCoverPreview()"></label>
+            <button class="modal-btn primary" id="cover-save" onclick="saveProfileCover()">Сохранить фон</button>
+        </fieldset>
+        <p id="cover-feedback" role="status"></p>
+        <button class="modal-btn transparent" onclick="closeCoverEditor()">Отмена</button>
     </div>
 
     <div id="avatar-viewer" class="story-overlay" onclick="closeFullAvatar()">
@@ -513,6 +535,7 @@
     <script src="/js/ui.js" defer></script>
     <script src="/js/chat.js" defer></script>
     <script src="/js/groups.js" defer></script>
+    <script src="/js/profile-cover.js" defer></script>
     <script src="/js/webrtc.js" defer></script>
     <script src="/js/main.js" defer></script>
     

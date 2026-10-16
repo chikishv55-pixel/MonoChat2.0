@@ -165,6 +165,7 @@ function loadRecentChats() {
          }
 
          function openProfileModal() {
+             if (currentChatUser) loadProfileCover(document.querySelector('#profile-modal .tg-profile-cover'), currentChatUser.username);
              const displayName = myContacts[currentChatUser.username] || currentChatUser.display_name; 
              const safeDisplayName = escapeHTML(displayName);
              setAvatarUI('pm-avatar-img', 'pm-avatar-text', currentChatUser.avatar, safeDisplayName);

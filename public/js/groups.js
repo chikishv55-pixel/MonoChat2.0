@@ -169,6 +169,7 @@ function openNewChatChoiceModal() {
 
         // --- Функции своего профиля ---
         function openMyProfileModal() {
+            loadProfileCover(document.querySelector('#my-profile-view .tg-profile-cover'), currentUser.username);
             document.getElementById('my-profile-view').classList.remove('hidden');
             document.getElementById('my-profile-edit').classList.add('hidden');
 

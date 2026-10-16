@@ -144,12 +144,16 @@ async function initDB() {
         await addColumnIfNotExists('users', 'music_status', 'TEXT');
         await addColumnIfNotExists('users', 'fcm_token', 'TEXT');
         await addColumnIfNotExists('users', 'is_premium', 'INTEGER DEFAULT 0');
+        await addColumnIfNotExists('users', 'cover_image', 'TEXT');
+        await addColumnIfNotExists('users', 'cover_blur', 'INTEGER DEFAULT 0');
+        await addColumnIfNotExists('users', 'cover_snow', 'INTEGER DEFAULT 0');
 
         // Создаем папки для загрузок, если их нет
         const uploadsDir = path.join(__dirname, '../../public/uploads');
         await fs.mkdir(path.join(uploadsDir, 'avatars'), { recursive: true });
         await fs.mkdir(path.join(uploadsDir, 'stories'), { recursive: true });
         await fs.mkdir(path.join(uploadsDir, 'media'), { recursive: true });
+        await fs.mkdir(path.join(uploadsDir, 'covers'), { recursive: true });
         console.log('Папки для загрузок готовы и БД инициализирована.');
         
         return true;
