@@ -357,6 +357,31 @@ svg { flex-shrink: 0; }
 }
 
 /* Centered account workspace, with a single scrolling content area. */
+.app-dialog-layer { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; background: #0009; backdrop-filter: blur(12px); padding: 20px; }
+.app-dialog { width: 100%; max-width: 410px; padding: 28px; border: 1px solid #ffffff20; border-radius: 26px; background: linear-gradient(145deg, #242424, #121212); box-shadow: 0 30px 100px #000a; }
+.dialog-symbol { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 22px; border-radius: 16px; background: #ffffff0a; border: 1px solid #ffffff15; font-size: 22px; }
+.app-dialog h3 { font-size: 21px; margin: 0 0 10px; letter-spacing: -.5px; }
+.app-dialog p { color: #999; font-size: 12px; line-height: 1.7; margin: 0 0 24px; overflow-wrap: anywhere; }
+.app-dialog label { display: block; color: #bbb; font-size: 12px; margin-bottom: 8px; }
+.app-dialog input { width: 100%; background: #08080880; border: 1px solid #ffffff25; color: #eee; padding: 14px; border-radius: 12px; font-size: 15px; }
+.app-dialog [hidden] { display: none; }
+.dialog-actions { display: flex; gap: 12px; margin-top: 24px; }
+.dialog-actions button { flex: 1; }
+#app-notices { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 11000; width: min(420px, calc(100% - 32px)); display: grid; gap: 8px; pointer-events: none; }
+.app-notice { background: #242424f5; border: 1px solid #ffffff20; box-shadow: 0 10px 40px #0008; border-radius: 16px; padding: 15px 20px; color: #eee; font-size: 13px; line-height: 1.6; backdrop-filter: blur(20px); }
+#comments-modal { max-height: calc(100dvh - 32px); align-items: stretch; gap: 0; }
+#comments-modal > div:first-child { flex-shrink: 0; }
+#comments-modal > div:first-child button { width: 34px; height: 34px; border-radius: 11px; background: #ffffff08 !important; }
+#comments-list { min-height: 0; scrollbar-width: thin; }
+#comments-modal .input-area { margin: 0 12px 12px; flex-shrink: 0; }
+#comments-modal .message-field { width: 0; min-height: 42px; }
+.comment-avatar { width: 34px; height: 34px; object-fit: cover; border-radius: 12px; flex: 0 0 34px; display: grid; place-items: center; background: #292929; font-size: 12px; }
+.comment-row > div { min-width: 0; }
+.discussion-empty { margin: auto; text-align: center; color: #ddd; font-size: 17px; line-height: 1.6; }
+.discussion-empty span { display: block; max-width: 260px; margin-top: 8px; font-size: 12px; color: #888; }
+.message-comments-btn { background: #ffffff07; border: 1px solid #ffffff10; border-radius: 12px; padding: 8px 12px; color: #bbb; transition: background .2s; }
+.message-comments-btn:hover { background: #ffffff13; color: #fff; }
+button:disabled { cursor: not-allowed; opacity: .5; }
 .premium-cover-controls { display: grid; gap: 8px; padding: 14px; margin-bottom: 16px; border: 1px solid #ffffff16; border-radius: 14px; background: #ffffff03; }
 .premium-cover-heading { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
 .premium-cover-controls label, .premium-cover-controls small { font-size: 11px; color: #aaa; line-height: 1.5; }

@@ -171,7 +171,7 @@ let localStream;
                 localStream = stream;
                 showActiveCall();
                 socket.emit('start_call', { to: callPeerUsername, isVideo: videoEnabled });
-            } catch (err) { cleanupCall(); alert('Не удалось получить доступ к камере или микрофону. Проверьте разрешения.'); }
+            } catch (err) { cleanupCall(); showToast('Не удалось получить доступ к камере или микрофону. Проверьте разрешения.'); }
         }
 
         socket.on('incoming_call', (data) => {
@@ -208,11 +208,11 @@ let localStream;
                 if (generation !== callGeneration) { stream.getTracks().forEach(t => t.stop()); return; }
                 localStream = stream;
                 showActiveCall();
-                
+
                 socket.emit('accept_call', { to: callPeerUsername, isVideo: isCurrentCallVideo });
                 setupPeerConnection();
             } catch (err) {
-                alert('Ошибка доступа к камере/микрофону');
+                showToast('Ошибка доступа к камере/микрофону');
                 rejectCall();
             }
         }
@@ -238,9 +238,9 @@ let localStream;
             }
         });
 
-        socket.on('call_rejected', () => { 
-            alert('Абонент отклонил вызов'); 
-            cleanupCall(); 
+        socket.on('call_rejected', () => {
+            showToast('Абонент отклонил вызов');
+            cleanupCall();
         });
         socket.on('call_ended', () => {
             if (document.getElementById('incoming-call-overlay').classList.contains('active')) {
@@ -282,7 +282,7 @@ let localStream;
                     document.getElementById('active-call-status').textContent = 'Восстанавливаем связь…';
                 } else if (state === 'failed') {
                     endCall();
-                    alert('Не удалось установить связь. Попробуйте позвонить ещё раз.');
+                    showToast('Не удалось установить связь. Попробуйте позвонить ещё раз.');
                 }
             };
             peerConnection.onicecandidate = (event) => {
@@ -304,11 +304,11 @@ let localStream;
             }
         });
 
-        socket.on('webrtc_answer', async (data) => { 
-            if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(e => console.error("Ошибка setRemoteDescription (answer):", e)); 
+        socket.on('webrtc_answer', async (data) => {
+            if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer)).catch(e => console.error("Ошибка setRemoteDescription (answer):", e));
         });
-        socket.on('webrtc_ice_candidate', async (data) => { 
-            if (peerConnection && data.candidate) await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(e => console.error("Ошибка addIceCandidate:", e)); 
+        socket.on('webrtc_ice_candidate', async (data) => {
+            if (peerConnection && data.candidate) await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(e => console.error("Ошибка addIceCandidate:", e));
         });
 
         function endCall() {

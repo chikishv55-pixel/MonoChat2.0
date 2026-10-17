@@ -108,10 +108,11 @@ module.exports = function(io, onlineUsers) {
             if (typeof callback !== 'function') callback = () => {};
             try {
                 const me = socket.user;
-                if (!me) return;
+                if (!me) return callback({success:false});
+                if (typeof data?.username !== 'string' || typeof data.alias !== 'string' || !data.alias.trim() || data.alias.trim().length > 80) return callback({success:false, message:'Введите имя до 80 символов.'});
                 const contactUsername = data.username.toLowerCase();
                 if (await dbGet('SELECT username FROM users WHERE username = ?', [contactUsername])) {
-                    await dbRun(`INSERT OR REPLACE INTO contacts (owner, contact_username, alias) VALUES (?, ?, ?)`, [me.username, contactUsername, data.alias]);
+                    await dbRun(`INSERT OR REPLACE INTO contacts (owner, contact_username, alias) VALUES (?, ?, ?)`, [me.username, contactUsername, data.alias.trim()]);
                     callback({ success: true });
                 } else callback({ success: false, message: 'Пользователь не найден.' });
             } catch (err) { callback({ success: false }); }
@@ -201,6 +202,8 @@ module.exports = function(io, onlineUsers) {
                 if (isGroup) {
                     const m = await dbGet(`SELECT role FROM group_members WHERE group_id = ? AND user_username = ?`, [to.substring(1), sender.username]);
                     if (!m) return;
+                    const group = await dbGet('SELECT type FROM groups WHERE id = ?', [to.substring(1)]);
+                    if (group?.type === 'channel' && m.role !== 'admin') return socket.emit('message failed', { time, error: 'Публиковать в канале могут только администраторы.' });
                 }
                 
                 let replySnippet = null;
@@ -299,19 +302,39 @@ module.exports = function(io, onlineUsers) {
             else { [msg.sender, msg.receiver].forEach(u => { const s = onlineUsers.get(u); if (s) io.to(Array.from(s)).emit('reaction updated', reactionData); }); }
         });
 
+        async function commentAccess(messageId) {
+            if (!socket.user || !Number.isInteger(messageId)) return null;
+            const msg = await dbGet('SELECT receiver, sender FROM messages WHERE id = ?', [messageId]);
+            if (!msg) return null;
+            if (msg.receiver.startsWith('g')) {
+                const membership = await dbGet('SELECT 1 FROM group_members WHERE group_id = ? AND user_username = ?', [msg.receiver.substring(1), socket.user.username]);
+                return membership ? msg : null;
+            }
+            return [msg.sender, msg.receiver].includes(socket.user.username) ? msg : null;
+        }
         socket.on('get_comments', async (messageId, cb) => {
-            const rows = await dbAll(`SELECT c.*, u.display_name, u.avatar, u.is_premium FROM message_comments c JOIN users u ON c.sender = u.username WHERE c.message_id = ? ORDER BY c.id ASC`, [messageId]);
-            cb(rows || []);
+            if (typeof cb !== 'function') return;
+            try {
+                if (!await commentAccess(messageId)) return cb({success:false, message:'Нет доступа к обсуждению.'});
+                const rows = await dbAll(`SELECT c.*, u.display_name, u.avatar, u.is_premium FROM message_comments c JOIN users u ON c.sender = u.username WHERE c.message_id = ? ORDER BY c.id ASC`, [messageId]);
+                cb(rows || []);
+            } catch { cb({success:false, message:'Не удалось загрузить комментарии.'}); }
         });
-
         socket.on('post_comment', async (data, cb) => {
-            const me = socket.user; if (!me) return cb({success:false});
-            const { lastID } = await dbRun('INSERT INTO message_comments (message_id, sender, text, time) VALUES (?, ?, ?, ?)', [data.messageId, me.username, data.text, data.time]);
-            const comment = { id: lastID, message_id: data.messageId, sender: me.username, text: data.text, time: data.time, display_name: me.display_name, avatar: me.avatar, is_premium: me.is_premium };
-            const msg = await dbGet('SELECT receiver, sender FROM messages WHERE id = ?', [data.messageId]);
-            if (msg.receiver.startsWith('g')) io.to(msg.receiver).emit('new_comment', comment);
-            else { [msg.sender, msg.receiver].forEach(u => { const s = onlineUsers.get(u); if (s) io.to(Array.from(s)).emit('new_comment', comment); }); }
-            cb({ success: true, comment });
+            if (typeof cb !== 'function') return;
+            try {
+                const msg = await commentAccess(data?.messageId);
+                if (!msg) return cb({success:false, message:'Обсуждение недоступно.'});
+                const text = typeof data.text === 'string' ? data.text.trim() : '';
+                if (!text || text.length > 4000) return cb({success:false, message:'Комментарий должен содержать от 1 до 4000 символов.'});
+                const me = socket.user;
+                const time = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+                const { lastID } = await dbRun('INSERT INTO message_comments (message_id, sender, text, time) VALUES (?, ?, ?, ?)', [data.messageId, me.username, text, time]);
+                const comment = { id: lastID, message_id: data.messageId, sender: me.username, text, time, display_name: me.display_name, avatar: me.avatar, is_premium: me.is_premium };
+                if (msg.receiver.startsWith('g')) io.to(msg.receiver).emit('new_comment', comment);
+                else [msg.sender, msg.receiver].forEach(u => { const clients = onlineUsers.get(u); if (clients) io.to(Array.from(clients)).emit('new_comment', comment); });
+                cb({ success: true, comment });
+            } catch { cb({success:false, message:'Не удалось отправить комментарий.'}); }
         });
 
         socket.on('start typing', (data) => {

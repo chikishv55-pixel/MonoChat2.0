@@ -38,7 +38,7 @@ function postStory(input) {
             
             const isVideo = file.type.startsWith('video/');
             if (isVideo && !isPremium) {
-                alert('Видео-аватарки доступны только Premium пользователям');
+                showToast('Видео-аватарки доступны только Premium пользователям');
                 input.value = '';
                 return;
             }
@@ -104,7 +104,7 @@ function postStory(input) {
                     localStorage.setItem('monochrome_user', JSON.stringify(currentUser));
                     updateAllMyAvatars(currentUser.avatar, currentUser.display_name);
                 } else {
-                    alert('Ошибка обновления аватара: ' + (res.message || ''));
+                    showToast('Ошибка обновления аватара: ' + (res.message || ''));
                     currentUser.avatar = oldAvatar;
                     updateAllMyAvatars(oldAvatar, currentUser.display_name);
                 }
@@ -213,7 +213,7 @@ function postStory(input) {
                     msgEl.style.backgroundColor = '';
                 }, 1500);
             } else {
-                alert('Исходное сообщение не найдено (возможно, оно в непрогруженной части истории).');
+                showToast('Исходное сообщение не найдено (возможно, оно в непрогруженной части истории).');
             }
         }
 
@@ -248,7 +248,7 @@ function postStory(input) {
 
         function executeForward() {
             const selected = document.querySelectorAll('input[name="forward-target"]:checked');
-            if (selected.length === 0) return alert('Выберите хотя бы один чат для пересылки.');
+            if (selected.length === 0) return showToast('Выберите хотя бы один чат для пересылки.');
             
             const targets = Array.from(selected).map(el => el.value);
             const submit = document.getElementById('forward-submit');
@@ -258,21 +258,31 @@ function postStory(input) {
                 submit.disabled = false;
                 submit.textContent = `Переслать · ${targets.length}`;
                 if (!error && res?.success) closeAllModals();
-                else alert(error ? 'Не получено подтверждение. Проверьте чат перед повторной отправкой.' : (res?.message || 'Не удалось переслать сообщение.'));
+                else showToast(error ? 'Не получено подтверждение. Проверьте чат перед повторной отправкой.' : (res?.message || 'Не удалось переслать сообщение.'));
             });
         }
 
         // --- Комментарии ---
         function openComments(messageId) {
             currentCommentMessageId = messageId;
-            document.getElementById('comments-list').innerHTML = '';
+            document.getElementById('comments-list').innerHTML = '<p class=discussion-empty>Загружаем обсуждение…</p>';
+            document.getElementById('comment-send').disabled = false;
             document.getElementById('comment-input').value = '';
             document.getElementById('main-overlay').classList.add('active');
             document.getElementById('comments-modal').classList.add('active');
             
-            socket.emit('get_comments', messageId, (comments) => {
-                if (comments) comments.forEach(appendCommentUI);
+            socket.timeout(8000).emit('get_comments', messageId, (error, comments) => {
+                if (currentCommentMessageId !== messageId) return;
+                const list = document.getElementById('comments-list');
+                list.querySelector('.discussion-empty')?.remove();
+                if (error || !Array.isArray(comments)) {
+                    showToast(comments?.message || 'Не удалось загрузить обсуждение. Откройте его повторно.');
+                    return;
+                }
+                comments.forEach(appendCommentUI);
+                if (!list.children.length) list.innerHTML = '<p class="discussion-empty">Пока тихо<br><span>Начните обсуждение — напишите первый комментарий.</span></p>';
             });
+            document.getElementById('comment-input').focus();
         }
 
         function closeCommentsModal() {
@@ -285,13 +295,17 @@ function postStory(input) {
 
         function appendCommentUI(comment) {
             const list = document.getElementById('comments-list');
+            if (list.querySelector(`[data-comment-id="${Number(comment.id)}"]`)) return;
+            list.querySelector('.discussion-empty')?.remove();
             const div = document.createElement('div');
+            div.dataset.commentId = comment.id;
+            div.className = 'comment-row';
             div.style.display = 'flex'; div.style.gap = '12px';
             
             const safeName = escapeHTML(comment.display_name);
             const avatarHTML = renderAvatarHTML(comment.avatar, comment.display_name, 'comment-avatar');
             
-            div.innerHTML = `${avatarHTML}<div style="flex: 1; display: flex; flex-direction: column;"><div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;"><span style="font-size: 14px; font-weight: 600; color: var(--text-main);">${safeName}${comment.is_premium ? ' <span class="premium-star">★</span>' : ''}</span><span style="font-size: 11px; color: var(--text-muted);">${comment.time}</span></div><div style="background: var(--bg-card); padding: 12px 16px; border-radius: 4px 16px 16px 16px; font-size: 14px; line-height: 1.5; color: var(--text-main); border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.05); white-space: pre-wrap; word-break: break-word;">${escapeHTML(comment.text)}</div></div>`;
+            div.innerHTML = `${avatarHTML}<div style="flex: 1; display: flex; flex-direction: column;"><div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px;"><span style="font-size: 14px; font-weight: 600; color: var(--text-main);">${safeName}${comment.is_premium ? ' <span class="premium-star">★</span>' : ''}</span><span style="font-size: 11px; color: var(--text-muted);">${escapeHTML(comment.time || '')}</span></div><div style="background: var(--bg-card); padding: 12px 16px; border-radius: 4px 16px 16px 16px; font-size: 14px; line-height: 1.5; color: var(--text-main); border: 1px solid var(--border-light); box-shadow: 0 4px 12px rgba(0,0,0,0.05); white-space: pre-wrap; word-break: break-word;">${escapeHTML(comment.text)}</div></div>`;
             list.appendChild(div);
             list.scrollTop = list.scrollHeight;
         }
@@ -303,8 +317,17 @@ function postStory(input) {
             
             const now = new Date(); const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
             
-            socket.emit('post_comment', { messageId: currentCommentMessageId, text, time }, (res) => {
-                if (res.success) input.value = ''; else alert('Ошибка при отправке комментария.');
+            const messageId = currentCommentMessageId;
+            const button = document.getElementById('comment-send');
+            if (button.disabled) return;
+            button.disabled = true;
+            socket.timeout(8000).emit('post_comment', { messageId, text, time }, (error, res) => {
+                if (currentCommentMessageId !== messageId) return;
+                button.disabled = false;
+                if (error || !res?.success) return showToast(res?.message || 'Нет подтверждения отправки. Проверьте обсуждение перед повтором.');
+                if (input.value.trim() === text) input.value = '';
+                appendCommentUI(res.comment);
+                input.focus();
             });
         }
 
@@ -416,7 +439,7 @@ function postStory(input) {
                     updatePremiumUI();
                     loadProfileCover(document.querySelector('#my-profile-view .tg-profile-cover'), currentUser.username);
                 } else {
-                    alert('Ошибка при обновлении подписки.');
+                    showToast('Ошибка при обновлении подписки.');
                 }
             });
         }

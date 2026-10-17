@@ -207,7 +207,7 @@ window.addEventListener('load', () => {
                     .then(images => {
                         images.forEach((img, index) => setTimeout(() => emitMessage(img, 'image'), index * 300));
                     })
-                    .catch(err => alert("Не удалось загрузить вставленные изображения."));
+                    .catch(err => showToast("Не удалось загрузить вставленные изображения."));
             }
         }
     });

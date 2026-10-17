@@ -151,18 +151,18 @@ function openNewChatChoiceModal() {
 
         function createChat(type) {
             const groupName = document.getElementById('new-group-name').value.trim();
-            if (!groupName) return alert('Введите название.');
-            if (newGroupMembers.size === 0 && type === 'group') return alert('Добавьте хотя бы одного участника в группу.');
+            if (!groupName) return showToast('Введите название.');
+            if (newGroupMembers.size === 0 && type === 'group') return showToast('Добавьте хотя бы одного участника в группу.');
 
             const membersArray = Array.from(newGroupMembers);
             socket.emit('create_chat', { name: groupName, type: type, members: membersArray }, (res) => {
                 if (res.success) {
                     closeAllModals();
                     loadRecentChats();
-                    const newChatObject = { username: `g${res.chat.id}`, display_name: res.chat.name, avatar: res.chat.avatar, isGroup: true, isOnline: false, type: res.chat.type };
+                    const newChatObject = { username: `g${res.chat.id}`, display_name: res.chat.name, avatar: res.chat.avatar, isGroup: true, isOnline: false, type: res.chat.type, my_role: 'admin' };
                     setTimeout(() => selectChat(newChatObject), 200); // Небольшая задержка для рендера списка
                 } else {
-                    alert(`Ошибка: ${res.message}`);
+                    showToast(`Ошибка: ${res.message}`);
                 }
             });
         }
@@ -211,7 +211,7 @@ function openNewChatChoiceModal() {
                 bio: document.getElementById('edit-profile-bio').value.trim(),
                 birthDate: document.getElementById('edit-profile-bdate').value,
             };
-            if (!data.displayName) return alert('Имя не может быть пустым.');
+            if (!data.displayName) return showToast('Имя не может быть пустым.');
 
             socket.emit('update_profile', data, (res) => {
                 if (res.success) {
@@ -221,7 +221,7 @@ function openNewChatChoiceModal() {
                     document.getElementById('profile-name').textContent = res.user.display_name;
                     updateAllMyAvatars(res.user.avatar, res.user.display_name);
                     openMyProfileModal(); // Переоткрываем модалку с обновленными данными
-                } else { alert('Ошибка: ' + (res.message || 'Не удалось сохранить профиль.')); }
+                } else { showToast('Ошибка: ' + (res.message || 'Не удалось сохранить профиль.')); }
             });
         }
 
@@ -274,7 +274,7 @@ function openNewChatChoiceModal() {
             const groupId = currentChatUser.username; // e.g. "g123"
 
             socket.emit('get_group_details', groupId, (res) => {
-                if (!res.success) return alert(res.message);
+                if (!res.success) return showToast(res.message);
                 
                 const { group, members, myRole } = res;
                 currentChatUser.groupData = group; // Cache group data
@@ -314,26 +314,26 @@ function openNewChatChoiceModal() {
             });
         }
 
-        function removeGroupMember(usernameToRemove) {
-            if (!confirm(`Вы уверены, что хотите удалить @${usernameToRemove} из группы?`)) return;
+        async function removeGroupMember(usernameToRemove) {
+            if (!await appDialog({title: 'Удалить участника?', description: `@${usernameToRemove} потеряет доступ к группе.`, action: 'Удалить'})) return;
             const groupId = currentChatUser.username.substring(1);
             socket.emit('remove_group_member', { groupId, usernameToRemove }, (res) => {
                 if (res.success) {
                     openGroupInfoModal(); // Refresh the list
                 } else {
-                    alert(`Ошибка: ${res.message}`);
+                    showToast(`Ошибка: ${res.message}`);
                 }
             });
         }
 
-        function leaveGroup() {
-            if (!confirm('Вы уверены, что хотите покинуть эту группу?')) return;
+        async function leaveGroup() {
+            if (!await appDialog({title: 'Покинуть группу?', description: 'Чтобы вернуться, понадобится приглашение.', action: 'Покинуть'})) return;
             const groupId = currentChatUser.username.substring(1);
             socket.emit('remove_group_member', { groupId, usernameToRemove: currentUser.username }, (res) => {
                 if (res.success) {
                     closeAllModals();
                 } else {
-                    alert(`Ошибка: ${res.message}`);
+                    showToast(`Ошибка: ${res.message}`);
                 }
             });
         }
@@ -349,7 +349,7 @@ function openNewChatChoiceModal() {
         }
 
         function addMembersToGroup() {
-            if (newGroupMembers.size === 0) return alert('Выберите участников для добавления.');
+            if (newGroupMembers.size === 0) return showToast('Выберите участников для добавления.');
             const groupId = currentChatUser.username.substring(1);
             const membersArray = Array.from(newGroupMembers);
             socket.emit('add_group_members', { groupId, members: membersArray }, (res) => {
@@ -357,14 +357,14 @@ function openNewChatChoiceModal() {
                     closeAllModals();
                     openGroupInfoModal(); // Refresh list
                 } else {
-                    alert(`Ошибка: ${res.message}`);
+                    showToast(`Ошибка: ${res.message}`);
                 }
             });
         }
 
         function openEditGroupModal() {
             const groupData = currentChatUser.groupData;
-            if (!groupData) return alert('Сначала откройте информацию о группе.');
+            if (!groupData) return showToast('Сначала откройте информацию о группе.');
             document.getElementById('edit-group-name').value = groupData.name;
             document.getElementById('edit-group-public-id').value = groupData.public_id || '';
             document.getElementById('edit-group-visibility').value = groupData.visibility;
@@ -378,13 +378,13 @@ function openNewChatChoiceModal() {
                 public_id: document.getElementById('edit-group-public-id').value.trim(),
                 visibility: document.getElementById('edit-group-visibility').value
             };
-            if (!settings.name) return alert('Название группы не может быть пустым.');
+            if (!settings.name) return showToast('Название группы не может быть пустым.');
 
             socket.emit('update_group_settings', { groupId, settings }, (res) => {
                 if (res.success) {
                     closeAllModals();
                 } else {
-                    alert(`Ошибка: ${res.message}`);
+                    showToast(`Ошибка: ${res.message}`);
                 }
             });
         }

@@ -24,14 +24,14 @@ function loadRecentChats() {
                 chatItem.className = `chat-item ${isActive ? 'active' : ''}`;
                 chatItem.setAttribute('data-username', user.username);
                 chatItem.onclick = () => selectChat(user);
-                
+
                 const displayName = escapeHTML(myContacts[user.username] || user.display_name);
                 const isUserPremium = !!user.is_premium;
                 const premiumBadge = isUserPremium ? '<span class="premium-star" title="Premium">★</span>' : '';
 
                 let avatarHTML = renderAvatarHTML(user.avatar, displayName, 'chat-avatar');
                 const statusDotHTML = user.isGroup ? '' : `<div class="status-dot ${user.isOnline ? 'online' : 'offline'}"></div>`;
-                
+
                 const snippetText = createMessageSnippet(user.lastMessage);
                 const lastMessageHTML = `<span class="chat-last-message" id="lm-${user.username}">${escapeHTML(snippetText)}</span>`;
 
@@ -47,7 +47,7 @@ function loadRecentChats() {
         let lastChatRequestId = 0;
         function selectChat(user) {
             currentChatUser = user;
-            
+
             // Сбрасываем поле ввода и другие состояния
             cancelReply();
             document.getElementById('message-text').value = '';
@@ -56,17 +56,17 @@ function loadRecentChats() {
             // Мгновенная очистка сообщений и показ лоадера
             const area = document.getElementById('messages-area');
             area.innerHTML = '<div class="chat-loader"><div class="spinner"></div><span>Загрузка сообщений...</span></div>';
-            
+
             const requestId = ++lastChatRequestId;
             const displayName = myContacts[user.username] || user.display_name;
             const safeDisplayName = escapeHTML(displayName);
             const safeUsername = escapeHTML(user.username);
-            
+
             const isUserPremium = !!user.is_premium;
             const premiumBadge = isUserPremium ? '<span class="premium-star" title="Premium">★</span>' : '';
-            
+
             const avatarWrapper = document.querySelector('.messages-header .avatar-wrapper');
-            avatarWrapper.innerHTML = renderAvatarHTML(user.avatar, displayName, 'partner-avatar') + 
+            avatarWrapper.innerHTML = renderAvatarHTML(user.avatar, displayName, 'partner-avatar') +
                 `<div class="status-dot" id="current-chat-status-dot" style="display:none;"></div>`;
 
             document.getElementById('current-chat-name').innerHTML = `${safeDisplayName} ${premiumBadge} <span class="username-tag" style="color:inherit">@${safeUsername}</span>`;
@@ -82,7 +82,7 @@ function loadRecentChats() {
                 statusText.textContent = membersStr;
                 addContactBtn.style.display = 'none';
                 callChoiceBtn.style.display = 'none';
-                
+
                 // Скрываем поле ввода, если это канал и пользователь не админ
                 if (user.type === 'channel' && user.my_role !== 'admin') {
                     document.getElementById('message-input-area').style.display = 'none';
@@ -97,10 +97,10 @@ function loadRecentChats() {
                 callChoiceBtn.style.display = 'block';
                 document.getElementById('message-input-area').style.display = 'flex';
             }
-            
+
             // Адаптация для мобилок: добавляем класс активности чата
             document.querySelector('.chat-container').classList.add('chat-active');
-            
+
             socket.emit('get history', user.username, (messages) => {
                 if (requestId === lastChatRequestId) {
                     renderMessages(messages);
@@ -125,15 +125,18 @@ function loadRecentChats() {
             currentChatUser = null;
         }
 
-        function addCurrentToContacts() {
-            const alias = prompt("Имя для контакта:", currentChatUser.display_name);
-            if (alias) {
-                socket.emit('add contact', { username: currentChatUser.username, alias }, () => {
-                    myContacts[currentChatUser.username] = alias;
-                    selectChat(currentChatUser);
-                    loadRecentChats();
-                });
-            }
+        async function addCurrentToContacts() {
+            const contact = currentChatUser;
+            if (!contact || contact.isGroup) return;
+            const alias = await appDialog({ title: 'Сохранить контакт', description: '@' + contact.username + ' · Имя будет видно только вам', value: contact.display_name, label: 'Имя контакта', action: 'Сохранить' });
+            if (alias === null) return;
+            socket.timeout(8000).emit('add contact', { username: contact.username, alias }, (error, res) => {
+                if (error || !res?.success) return showToast(res?.message || 'Не удалось сохранить контакт. Проверьте соединение.');
+                myContacts[contact.username] = alias;
+                if (currentChatUser?.username === contact.username) selectChat(contact);
+                loadRecentChats();
+                showToast('Контакт сохранён');
+            });
         }
 
         socket.on('user status changed', (data) => {
@@ -166,7 +169,7 @@ function loadRecentChats() {
 
          function openProfileModal() {
              if (currentChatUser) loadProfileCover(document.querySelector('#profile-modal .tg-profile-cover'), currentChatUser.username);
-             const displayName = myContacts[currentChatUser.username] || currentChatUser.display_name; 
+             const displayName = myContacts[currentChatUser.username] || currentChatUser.display_name;
              const safeDisplayName = escapeHTML(displayName);
              setAvatarUI('pm-avatar-img', 'pm-avatar-text', currentChatUser.avatar, safeDisplayName);
              document.getElementById('pm-name').textContent = safeDisplayName;
@@ -174,7 +177,7 @@ function loadRecentChats() {
 
              const bioEl = document.getElementById('pm-bio');
              const bdateEl = document.getElementById('pm-bdate');
-             
+
              bioEl.textContent = currentChatUser.bio || '';
              bioEl.style.display = currentChatUser.bio ? 'block' : 'none';
 
@@ -204,7 +207,7 @@ function loadRecentChats() {
                 document.getElementById('avatar-viewer').classList.add('active');
             }
         }
-        
+
         function closeFullAvatar() { document.getElementById('avatar-viewer').classList.remove('active'); }
 
         function sendTextMessage() {
@@ -219,7 +222,7 @@ function loadRecentChats() {
                 isCurrentlyTyping = false;
             }
 
-            emitMessage(text, 'text'); 
+            emitMessage(text, 'text');
             input.value = '';
             input.dispatchEvent(new Event('input')); // Обновляем видимость кнопок
         }
@@ -244,7 +247,7 @@ function loadRecentChats() {
                     .then(images => {
                         images.forEach((img, index) => setTimeout(() => emitMessage(img, 'image'), index * 300));
                     })
-                    .catch(err => alert("Не удалось загрузить изображения."));
+                    .catch(err => showToast("Не удалось загрузить изображения."));
             }
             input.value = '';
         }
@@ -254,14 +257,14 @@ function loadRecentChats() {
                 mediaRecorder = new MediaRecorder(stream);
                 voiceStartTime = Date.now();
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.start(); 
+                mediaRecorder.start();
                 document.getElementById('record-btn').classList.add('recording');
-            } catch (err) { alert('Нет доступа к микрофону!'); }
+            } catch (err) { showToast('Нет доступа к микрофону!'); }
         }
 
         function stopVoice() {
-            if (!mediaRecorder) return; 
-            mediaRecorder.stop(); 
+            if (!mediaRecorder) return;
+            mediaRecorder.stop();
             const duration = (Date.now() - voiceStartTime) / 1000;
             mediaRecorder.onstop = () => {
                 document.getElementById('record-btn').classList.remove('recording');
@@ -270,7 +273,7 @@ function loadRecentChats() {
                     return;
                 }
                 const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                const reader = new FileReader(); 
+                const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = () => emitMessage(reader.result, 'audio', duration);
                 audioChunks = [];
@@ -285,7 +288,7 @@ function loadRecentChats() {
         async function startCircleVideo() {
             try {
                 circleStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", aspectRatio: 1 }, audio: true });
-                
+
                 const previewOverlay = document.getElementById('circle-preview-overlay');
                 const previewVideo = document.getElementById('circle-preview-video');
                 previewVideo.srcObject = circleStream;
@@ -298,8 +301,8 @@ function loadRecentChats() {
                 circleMediaRecorder.ondataavailable = e => circleChunks.push(e.data);
                 circleMediaRecorder.start();
                 document.getElementById('record-btn').classList.add('recording');
-            } catch (err) { 
-                alert('Нет доступа к камере или микрофону!'); 
+            } catch (err) {
+                showToast('Нет доступа к камере или микрофону!');
                 if (circleStream) {
                     circleStream.getTracks().forEach(t => t.stop());
                     circleStream = null;
@@ -351,12 +354,12 @@ function loadRecentChats() {
 
         function handleRecordStart(e) {
             if (e.type === 'touchstart') isTouchDevice = true;
-            if (e.type === 'mousedown' && isTouchDevice) return; 
-            
+            if (e.type === 'mousedown' && isTouchDevice) return;
+
             isPressing = true;
             isRecordingMedia = false;
             clearTimeout(recordHoldTimer);
-            
+
             recordHoldTimer = setTimeout(() => {
                 if (!isPressing) return;
                 isRecordingMedia = true;
@@ -367,7 +370,7 @@ function loadRecentChats() {
 
         function handleRecordStop(e) {
             if (e && e.type === 'mouseup' && isTouchDevice) return;
-            
+
             if (!isPressing) return;
             isPressing = false;
             clearTimeout(recordHoldTimer);
@@ -383,9 +386,9 @@ function loadRecentChats() {
             }
         }
 
-        function handleRecordLeave(e) { 
+        function handleRecordLeave(e) {
             if (e.type === 'mouseleave' && isTouchDevice) return;
-            if (isPressing) handleRecordStop(e); 
+            if (isPressing) handleRecordStop(e);
         }
 
         function toggleRecordMode() {
@@ -398,7 +401,7 @@ function loadRecentChats() {
             const previewOverlay = document.getElementById('circle-preview-overlay');
             if (!previewOverlay) return;
             const previewVideo = document.getElementById('circle-preview-video');
-            
+
             previewOverlay.classList.remove('visible');
             setTimeout(() => {
                 previewOverlay.style.display = 'none';
@@ -410,12 +413,12 @@ function loadRecentChats() {
             if (!currentChatUser) return;
             const now = new Date(); const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
             let finalContent = content;
-            
+
             if (content && typeof content === 'string' && content.startsWith('data:')) {
                 try {
                     const res = await fetch(SERVER_URL + '/api/upload/chat-media', {
                         method: 'POST',
-                        headers: { 
+                        headers: {
                             'Content-Type': 'application/json',
                             'Authorization': 'Bearer ' + localStorage.getItem('monochrome_token')
                         },
@@ -425,17 +428,17 @@ function loadRecentChats() {
                     if (data.success) {
                         finalContent = data.path;
                     } else {
-                        return alert('Ошибка загрузки медиа');
+                        return showToast('Ошибка загрузки медиа');
                     }
-                } catch(e) { return alert('Network error during upload'); }
+                } catch(e) { return showToast('Network error during upload'); }
             }
 
-            const payload = { 
-                to: currentChatUser.username, 
-                text: finalContent, 
-                type, 
-                time, 
-                duration 
+            const payload = {
+                to: currentChatUser.username,
+                text: finalContent,
+                type,
+                time,
+                duration
             };
             if (replyContext) {
                 payload.replyTo = replyContext;
@@ -452,7 +455,7 @@ function loadRecentChats() {
 
             // Далее, если чат открыт, добавляем сообщение в окно.
             if (!currentChatUser) return;
-            
+
             const isGroupMsg = msg.receiver.startsWith('g');
             let chatIsActive = false;
             if (isGroupMsg) {
@@ -488,7 +491,7 @@ function loadRecentChats() {
                 typingUsers.get(chatId).delete(displayName);
                 if (typingUsers.get(chatId).size === 0) typingUsers.delete(chatId);
             }
-            
+
             // Если в этом чате больше никто не печатает, нужно восстановить последнее сообщение
             if (!typers || typers.size === 0) {
                 const lastMessageSpan = document.getElementById(`lm-${chatId}`);
@@ -499,11 +502,11 @@ function loadRecentChats() {
             }
             updateTypingIndicator(chatId); // Обновляем заголовок в любом случае
         });
-        
+
         socket.on('new_comment', (comment) => {
             const countSpan = document.getElementById(`comment-count-${comment.message_id}`);
             if (countSpan) countSpan.textContent = parseInt(countSpan.textContent || 0) + 1;
-            
+
             if (currentCommentMessageId === comment.message_id) {
                 appendCommentUI(comment);
             }
@@ -526,7 +529,7 @@ function loadRecentChats() {
         });
 
         socket.on('message failed', ({ time, error }) => {
-            alert(`Не удалось отправить сообщение: ${error}`);
+            showToast(`Не удалось отправить сообщение: ${error}`);
         });
 
         socket.on('new story', loadStories);
@@ -534,7 +537,7 @@ function loadRecentChats() {
         socket.on('group_member_removed', ({ groupId, removedUsername, removerUsername }) => {
             const groupUsername = `g${groupId}`;
             if (removedUsername === currentUser.username) {
-                alert(`Вы были удалены из группы.`);
+                showToast(`Вы были удалены из группы.`);
                 // Если текущий чат - эта группа, закрываем его
                 if (currentChatUser && currentChatUser.username === groupUsername) {
                     closeChatMobile();
@@ -568,7 +571,7 @@ function loadRecentChats() {
         function renderMessages(messages) {
             const area = document.getElementById('messages-area');
             area.innerHTML = '';
-            
+
             if (messages.length === 0) {
                 area.innerHTML = '<div class="history-empty">Здесь начинается ваш разговор.</div>';
                 return;
@@ -579,10 +582,10 @@ function loadRecentChats() {
                 const msgEl = createMessageElement(msg);
                 fragment.appendChild(msgEl);
             });
-            
+
             area.appendChild(fragment);
             area.scrollTop = area.scrollHeight;
-            
+
             // Запускаем отрисовку реакций после вставки в DOM
             messages.forEach(msg => {
                 if (msg.reactions && msg.reactions.length > 0) {
@@ -597,7 +600,7 @@ function loadRecentChats() {
             div.className = `message ${isMine ? 'mine' : 'other'}`;
             div.id = `msg-${msg.id}`;
             div.dataset.reactions = JSON.stringify(msg.reactions || []);
-            
+
             let content = '';
             let bubbleClass = 'bubble';
 
@@ -710,16 +713,16 @@ function loadRecentChats() {
             const audio = btn.parentElement.querySelector('.hidden-audio');
             const icon = btn.querySelector('svg');
             const progress = btn.parentElement.querySelector('.voice-progress');
-            
-            if (audio.paused) { 
+
+            if (audio.paused) {
                 document.querySelectorAll('audio').forEach(a => { a.pause(); a.currentTime = 0; });
-                audio.play(); 
-                icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; 
-            } else { 
-                audio.pause(); 
-                icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; 
+                audio.play();
+                icon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+            } else {
+                audio.pause();
+                icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
             }
-            
+
             audio.ontimeupdate = () => { if(progress) progress.style.width = (audio.currentTime / audio.duration * 100) + '%'; };
             audio.onended = () => { icon.innerHTML = '<path d="M8 5v14l11-7z"/>'; if(progress) progress.style.width = '0%'; };
         }

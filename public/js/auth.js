@@ -1,6 +1,6 @@
 function showLogin() { document.getElementById('login-card').classList.remove('hidden'); document.getElementById('register-card').classList.add('hidden'); }
         function showRegister() { document.getElementById('login-card').classList.add('hidden'); document.getElementById('register-card').classList.remove('hidden'); }
-        function showHelp() { alert("МОНОХРОМ - приватный чат."); }
+        function showHelp() { showToast("МОНОХРОМ - приватный чат."); }
 
         function closeAllModals() {
             closeCoverEditor(false);
@@ -53,7 +53,7 @@ function showLogin() { document.getElementById('login-card').classList.remove('h
         async function login() {
             const username = document.getElementById('username-input').value.trim();
             const password = document.getElementById('password-input').value;
-            if(!username || !password) return alert('Введите данные');
+            if(!username || !password) return showToast('Введите данные');
             try {
                 const response = await fetch(SERVER_URL + '/api/auth/login', {
                     method: 'POST',
@@ -66,8 +66,8 @@ function showLogin() { document.getElementById('login-card').classList.remove('h
                     socket.auth = { token: res.token };
                     socket.disconnect().connect();
                     authSuccess(res.user);
-                } else alert(res.message);
-            } catch (err) { alert('Ошибка'); }
+                } else showToast(res.message);
+            } catch (err) { showToast('Ошибка'); }
         }
 
         async function register() {
@@ -75,8 +75,8 @@ function showLogin() { document.getElementById('login-card').classList.remove('h
             const username = document.getElementById('reg-username').value.trim();
             const password = document.getElementById('reg-password').value;
             const passwordCheck = document.getElementById('reg-password2').value;
-            if (password !== passwordCheck) return alert('Пароли не совпадают');
-            if(!username || !displayName || !password) return alert('Заполните все поля');
+            if (password !== passwordCheck) return showToast('Пароли не совпадают');
+            if(!username || !displayName || !password) return showToast('Заполните все поля');
             try {
                 const response = await fetch(SERVER_URL + '/api/auth/register', {
                     method: 'POST',
@@ -89,6 +89,6 @@ function showLogin() { document.getElementById('login-card').classList.remove('h
                     socket.auth = { token: res.token };
                     socket.disconnect().connect();
                     authSuccess(res.user);
-                } else alert(res.message);
-            } catch (err) { alert('Ошибка'); }
+                } else showToast(res.message);
+            } catch (err) { showToast('Ошибка'); }
         }
