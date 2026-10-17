@@ -169,6 +169,7 @@ function openNewChatChoiceModal() {
 
         // --- Функции своего профиля ---
         function openMyProfileModal() {
+            document.getElementById('settings-title').textContent = 'Настройки';
             loadProfileCover(document.querySelector('#my-profile-view .tg-profile-cover'), currentUser.username);
             document.getElementById('my-profile-view').classList.remove('hidden');
             document.getElementById('my-profile-edit').classList.add('hidden');
@@ -181,9 +182,12 @@ function openNewChatChoiceModal() {
 
             document.getElementById('main-overlay').classList.add('active');
             document.getElementById('my-profile-modal').classList.add('active');
+            document.querySelector('#my-profile-modal .tg-panel-content').scrollTop = 0;
+            document.querySelector('#my-profile-modal .settings-close').focus({ preventScroll: true });
         }
 
         function enterEditProfileMode() {
+            document.getElementById('settings-title').textContent = 'Изменить профиль';
             document.getElementById('my-profile-view').classList.add('hidden');
             document.getElementById('my-profile-edit').classList.remove('hidden');
 
@@ -191,9 +195,12 @@ function openNewChatChoiceModal() {
             document.getElementById('edit-profile-name').value = currentUser.display_name;
             document.getElementById('edit-profile-bio').value = currentUser.bio || '';
             document.getElementById('edit-profile-bdate').value = currentUser.birth_date || '';
+            document.querySelector('#my-profile-modal .tg-panel-content').scrollTop = 0;
+            document.getElementById('edit-profile-name').focus({ preventScroll: true });
         }
 
         function exitEditProfileMode() {
+            document.getElementById('settings-title').textContent = 'Настройки';
             document.getElementById('my-profile-view').classList.remove('hidden');
             document.getElementById('my-profile-edit').classList.add('hidden');
         }

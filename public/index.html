@@ -205,11 +205,11 @@
         </div>
     </div>
 
-    <div class="tg-settings-panel" id="my-profile-modal">
+    <div class="tg-settings-panel" id="my-profile-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
         <div class="tg-panel-header">
-            <button class="tg-back-btn" onclick="closeAllModals()">‹</button>
-            <h3 class="tg-header-title">Настройки</h3>
-            <div style="width: 24px;"></div> <!-- Spacer -->
+            <span class="settings-brand">monochrome<span>.</span></span>
+            <h3 class="tg-header-title" id="settings-title">Настройки</h3>
+            <button class="tg-back-btn settings-close" aria-label="Закрыть настройки" onclick="closeAllModals()">×</button>
         </div>
         
         <div class="tg-panel-content">
@@ -225,7 +225,7 @@
                     <button class="cover-edit-button" onclick="openCoverEditor()">Настроить фон</button>
                 </div>
                 
-                <div class="tg-section">
+                <div class="tg-section settings-details">
                     <div class="tg-menu-item">
                         <div class="tg-menu-labeled">
                             <span class="tg-menu-label" id="my-profile-username-modal">@username</span>
@@ -247,7 +247,7 @@
                 </div>
 
                 <div class="tg-section" id="premium-section">
-                    <div class="tg-menu-item" onclick="togglePremium()">
+                    <div class="tg-menu-item">
                         <div class="tg-menu-icon-wrapper premium-icon">
                             <span style="font-size: 18px;">★</span>
                         </div>
@@ -255,23 +255,23 @@
                             <span class="tg-menu-label" id="premium-status-label">Monochrome Premium</span>
                             <span class="tg-menu-sublabel" id="premium-status-sublabel">Разблокировать видео-аватарки</span>
                         </div>
-                        <button class="tg-btn-link" id="premium-action-btn">Подключить</button>
+                        <button class="tg-btn-link" id="premium-action-btn" onclick="togglePremium()">Подключить</button>
                     </div>
                 </div>
 
-                <div class="tg-section">
-                    <div class="tg-menu-item" onclick="enterEditProfileMode()">
+                <div class="tg-section settings-actions">
+                    <button class="tg-menu-item" onclick="enterEditProfileMode()">
                         <svg class="tg-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                        <span class="tg-menu-text">Изменить профиль</span>
-                    </div>
-                    <div class="tg-menu-item" onclick="toggleTheme()">
+                        <span class="tg-menu-text">Изменить профиль<small>Имя, фото и информация о себе</small></span><span class="settings-chevron" aria-hidden="true">›</span>
+                    </button>
+                    <button class="tg-menu-item" onclick="openCoverEditor()">
                         <svg class="tg-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                        <span class="tg-menu-text">Оформление</span>
-                    </div>
-                    <div class="tg-menu-item text-danger" onclick="logout()">
+                        <span class="tg-menu-text">Фон и эффекты<small>Фото, размытие и падающий снег</small></span><span class="settings-chevron" aria-hidden="true">›</span>
+                    </button>
+                    <button class="tg-menu-item text-danger" onclick="logout()">
                         <svg class="tg-menu-icon text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                        <span class="tg-menu-text text-danger">Выйти</span>
-                    </div>
+                        <span class="tg-menu-text text-danger">Выйти из аккаунта</span>
+                    </button>
                 </div>
             </div>
 
@@ -287,19 +287,19 @@
                 
                 <div class="tg-section">
                     <div class="tg-input-group">
-                        <label class="tg-input-label">Имя</label>
+                        <label class="tg-input-label" for="edit-profile-name">Имя</label>
                         <input type="text" class="tg-input-field" id="edit-profile-name" placeholder="Ваше имя">
                     </div>
                     <div class="tg-input-group">
-                        <label class="tg-input-label">О себе</label>
+                        <label class="tg-input-label" for="edit-profile-bio">О себе</label>
                         <textarea class="tg-input-field" id="edit-profile-bio" placeholder="Расскажите о себе..." rows="2"></textarea>
                     </div>
                     <div class="tg-input-group">
-                        <label class="tg-input-label">Дата рождения</label>
+                        <label class="tg-input-label" for="edit-profile-bdate">Дата рождения</label>
                         <input type="date" class="tg-input-field" id="edit-profile-bdate">
                     </div>
                 </div>
-                <div style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="settings-edit-actions">
                     <button class="tg-btn primary" onclick="saveProfile()">Сохранить</button>
                     <button class="tg-btn secondary" onclick="exitEditProfileMode()">Отмена</button>
                 </div>
