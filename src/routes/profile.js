@@ -16,21 +16,25 @@ router.use((req, res, next) => {
 
 router.get('/:username/cover', async (req, res) => {
     try {
-        const user = await dbGet('SELECT cover_image, cover_blur, cover_snow FROM users WHERE username = ?', [req.params.username]);
+        const user = await dbGet('SELECT cover_image, cover_blur, cover_snow, cover_effect, cover_ring, is_premium FROM users WHERE username = ?', [req.params.username]);
         if (!user) return res.status(404).json({ success: false, message: 'Профиль не найден.' });
-        res.json({ success: true, cover: { image: user.cover_image, blur: user.cover_blur, snow: !!user.cover_snow } });
+        res.json({ success: true, cover: { image: user.cover_image, blur: user.cover_blur, snow: !!user.cover_snow, effect: user.is_premium ? user.cover_effect : 'none', ring: user.is_premium ? user.cover_ring : 'none' } });
     } catch { res.status(500).json({ success: false, message: 'Не удалось загрузить фон.' }); }
 });
 
 router.put('/cover', async (req, res) => {
-    const { image, blur, snow } = req.body || {};
+    const { image, blur, snow, effect = 'none', ring = 'none' } = req.body || {};
+    if (!['none', 'aurora', 'rain'].includes(effect) || !['none', 'silver', 'iridescent'].includes(ring)) {
+        return res.status(400).json({ success: false, message: 'Неизвестный стиль оформления.' });
+    }
     if (!Number.isInteger(blur) || blur < 0 || blur > 20 || typeof snow !== 'boolean') {
         return res.status(400).json({ success: false, message: 'Некорректные настройки эффектов.' });
     }
     let newFile;
     try {
-        const user = await dbGet('SELECT cover_image FROM users WHERE username = ?', [req.username]);
+        const user = await dbGet('SELECT cover_image, is_premium FROM users WHERE username = ?', [req.username]);
         if (!user) return res.status(404).json({ success: false, message: 'Профиль не найден.' });
+        if (!user.is_premium && (effect !== 'none' || ring !== 'none')) return res.status(403).json({ success: false, message: 'Эти эффекты доступны с Premium.' });
         let imagePath = user.cover_image;
         if (image === null) imagePath = null;
         else if (image !== undefined) {
@@ -46,8 +50,8 @@ router.put('/cover', async (req, res) => {
             await fs.writeFile(newFile, bytes, { flag: 'wx' });
             imagePath = `/uploads/covers/${filename}`;
         }
-        await dbRun('UPDATE users SET cover_image = ?, cover_blur = ?, cover_snow = ? WHERE username = ?', [imagePath, blur, snow ? 1 : 0, req.username]);
-        res.json({ success: true, cover: { image: imagePath, blur, snow } });
+        await dbRun('UPDATE users SET cover_image = ?, cover_blur = ?, cover_snow = ?, cover_effect = ?, cover_ring = ? WHERE username = ?', [imagePath, blur, snow ? 1 : 0, effect, ring, req.username]);
+        res.json({ success: true, cover: { image: imagePath, blur, snow, effect, ring } });
     } catch {
         if (newFile) await fs.unlink(newFile).catch(() => {});
         res.status(500).json({ success: false, message: 'Не удалось сохранить фон. Попробуйте ещё раз.' });

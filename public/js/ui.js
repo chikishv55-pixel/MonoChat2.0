@@ -413,8 +413,8 @@ function postStory(input) {
                     isPremium = !!res.is_premium;
                     currentUser.is_premium = res.is_premium;
                     localStorage.setItem('monochrome_user', JSON.stringify(currentUser));
-                    alert(isPremium ? 'Поздравляем! Теперь у вас есть Premium.' : 'Подписка Premium отменена.');
-                    location.reload(); // Перезагружаем для обновления UI
+                    updatePremiumUI();
+                    loadProfileCover(document.querySelector('#my-profile-view .tg-profile-cover'), currentUser.username);
                 } else {
                     alert('Ошибка при обновлении подписки.');
                 }
@@ -430,8 +430,8 @@ function postStory(input) {
             if (label && sublabel && btn && icon) {
                 if (isPremium) {
                     label.textContent = 'Monochrome Premium Активен';
-                    sublabel.textContent = 'Вам доступны видео-аватарки';
-                    btn.textContent = 'Активен';
+                    sublabel.textContent = 'Видео-аватарки, живые обложки и рамки';
+                    btn.textContent = 'Отключить';
                     btn.style.color = 'var(--text-muted)';
                     
                     const profileName = document.getElementById('profile-name');
@@ -439,8 +439,9 @@ function postStory(input) {
                         profileName.innerHTML += ' <span class="premium-star">★</span>';
                     }
                 } else {
+                    document.querySelector('#profile-name .premium-star')?.remove();
                     label.textContent = 'Monochrome Premium';
-                    sublabel.textContent = 'Разблокировать видео-аватарки';
+                    sublabel.textContent = 'Видео-аватарки, живые обложки и рамки';
                     btn.textContent = 'Подключить';
                     btn.style.color = 'var(--accent)';
                 }

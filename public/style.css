@@ -4,7 +4,7 @@
     --bg-main: #050505; --bg-card: #151515; --bg-panel: #0e0e0e;
     --text-main: #f5f5f5; --text-muted: #a0a0a0; --text-placeholder: #777;
     --border-color: #ffffff20; --border-light: #ffffff0d;
-    --bubble-mine-bg: #eeeeee; --bubble-mine-text: #101010;
+    --bubble-mine-bg: #292929; --bubble-mine-text: #f4f4f4;
     --bubble-other-bg: #202020; --bubble-other-text: #f2f2f2;
     --hover-bg: #ffffff09; --active-bg: #ffffff15;
     --avatar-bg: #292929; --avatar-text: #ededed;
@@ -14,8 +14,8 @@
     --transition-fast: .18s ease; --transition-med: .28s ease;
 }
 /* Saved theme preferences now use the same black foundation. */
-body.dark-theme { --bubble-mine-bg: #d5d5d5; }
-body.theme-ocean { --bubble-mine-bg: #d3dce4; }
+body.dark-theme { --bubble-mine-bg: #292929; }
+body.theme-ocean { --bubble-mine-bg: #252c34; }
 body.theme-oled { --bg-panel: #050505; --bg-card: #0d0d0d; }
 
 /* ОБЩИЕ СТИЛИ */

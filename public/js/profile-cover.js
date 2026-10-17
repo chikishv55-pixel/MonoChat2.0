@@ -35,6 +35,9 @@ function renderProfileCover(element, cover = {}) {
             snow.appendChild(flake);
         }
         layer.append(photo, shade, snow);
+        const effectLayer = document.createElement('div');
+        effectLayer.className = 'profile-cover-effect';
+        layer.append(effectLayer);
         element.prepend(layer);
     }
     const photo = layer.querySelector('img');
@@ -44,6 +47,8 @@ function renderProfileCover(element, cover = {}) {
     photo.hidden = !source;
     element.classList.toggle('has-cover-photo', !!source);
     element.classList.toggle('has-cover-snow', !!cover.snow);
+    element.dataset.effect = ['aurora', 'rain'].includes(cover.effect) ? cover.effect : 'none';
+    element.dataset.ring = ['silver', 'iridescent'].includes(cover.ring) ? cover.ring : 'none';
     element.style.setProperty('--cover-blur', `${Number(cover.blur) || 0}px`);
 }
 
@@ -75,6 +80,11 @@ async function openCoverEditor() {
         coverDraft = { ...cover, upload: undefined };
         document.getElementById('cover-blur').value = cover.blur;
         document.getElementById('cover-snow').checked = cover.snow;
+        for (const key of ['effect', 'ring']) {
+            document.getElementById('cover-' + key).value = cover[key] || 'none';
+            document.getElementById('cover-' + key).disabled = !isPremium;
+        }
+        document.getElementById('cover-premium-hint').textContent = isPremium ? 'Видно всем, кто открывает ваш профиль' : 'Доступно с Premium · подключение в настройках профиля';
         document.getElementById('cover-controls').disabled = false;
         document.getElementById('cover-feedback').textContent = 'JPG, PNG или WebP · до 5 МБ';
         updateCoverPreview();
@@ -87,6 +97,8 @@ function updateCoverPreview() {
     if (!coverDraft) return;
     coverDraft.blur = Number(document.getElementById('cover-blur').value);
     coverDraft.snow = document.getElementById('cover-snow').checked;
+    coverDraft.effect = document.getElementById('cover-effect').value;
+    coverDraft.ring = document.getElementById('cover-ring').value;
     document.getElementById('cover-blur-value').textContent = coverDraft.blur === 0 ? 'Выкл.' : coverDraft.blur;
     document.getElementById('cover-remove').disabled = !coverDraft.image;
     renderProfileCover(document.getElementById('cover-preview'), coverDraft);
@@ -139,7 +151,7 @@ async function saveProfileCover() {
     document.getElementById('cover-controls').disabled = true;
     document.getElementById('cover-save').textContent = 'Сохраняем…';
     try {
-        const cover = await coverRequest('/api/profile/cover', { method: 'PUT', body: JSON.stringify({ image: coverDraft.upload, blur: coverDraft.blur, snow: coverDraft.snow }) });
+        const cover = await coverRequest('/api/profile/cover', { method: 'PUT', body: JSON.stringify({ image: coverDraft.upload, blur: coverDraft.blur, snow: coverDraft.snow, effect: coverDraft.effect, ring: coverDraft.ring }) });
         const panel = document.querySelector('#my-profile-view .tg-profile-cover');
         panel.dataset.coverRequest = '';
         renderProfileCover(panel, cover);

@@ -253,7 +253,7 @@
                         </div>
                         <div class="tg-menu-labeled" style="flex: 1;">
                             <span class="tg-menu-label" id="premium-status-label">Monochrome Premium</span>
-                            <span class="tg-menu-sublabel" id="premium-status-sublabel">Разблокировать видео-аватарки</span>
+                            <span class="tg-menu-sublabel" id="premium-status-sublabel">Видео-аватарки, живые обложки и рамки</span>
                         </div>
                         <button class="tg-btn-link" id="premium-action-btn" onclick="togglePremium()">Подключить</button>
                     </div>
@@ -322,6 +322,14 @@
             <label class="cover-control" for="cover-blur"><span>Размытие</span><output id="cover-blur-value">0</output></label>
             <input id="cover-blur" type="range" min="0" max="20" step="1" value="0" oninput="updateCoverPreview()">
             <label class="cover-control cover-snow-control" for="cover-snow"><span>Падающий снег<small>Лёгкая анимация поверх фона</small></span><input id="cover-snow" type="checkbox" onchange="updateCoverPreview()"></label>
+            <div class="premium-cover-controls">
+                <span class="premium-cover-heading">Оформление Premium ✦</span>
+                <label for="cover-effect">Анимация обложки</label>
+                <select id="cover-effect" onchange="updateCoverPreview()"><option value="none">Без анимации</option><option value="aurora">Северное сияние</option><option value="rain">Дождь</option></select>
+                <label for="cover-ring">Рамка аватарки</label>
+                <select id="cover-ring" onchange="updateCoverPreview()"><option value="none">Без рамки</option><option value="silver">Серебро</option><option value="iridescent">Перелив</option></select>
+                <small id="cover-premium-hint">Видно всем, кто открывает ваш профиль</small>
+            </div>
             <button class="modal-btn primary" id="cover-save" onclick="saveProfileCover()">Сохранить фон</button>
         </fieldset>
         <p id="cover-feedback" role="status"></p>

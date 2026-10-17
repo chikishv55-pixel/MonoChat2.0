@@ -147,6 +147,8 @@ async function initDB() {
         await addColumnIfNotExists('users', 'cover_image', 'TEXT');
         await addColumnIfNotExists('users', 'cover_blur', 'INTEGER DEFAULT 0');
         await addColumnIfNotExists('users', 'cover_snow', 'INTEGER DEFAULT 0');
+        await addColumnIfNotExists('users', 'cover_effect', "TEXT DEFAULT 'none'");
+        await addColumnIfNotExists('users', 'cover_ring', "TEXT DEFAULT 'none'");
 
         // Создаем папки для загрузок, если их нет
         const uploadsDir = path.join(__dirname, '../../public/uploads');
